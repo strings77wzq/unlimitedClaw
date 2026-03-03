@@ -105,7 +105,7 @@ func (a *Agent) Start(ctx context.Context) {
 			a.handleMessage(ctx, msg)
 		}
 	}
-
-	var _ Runner = (*Agent)(nil)
-
 }
+
+// Compile-time interface compliance check.
+var _ Runner = (*Agent)(nil)
