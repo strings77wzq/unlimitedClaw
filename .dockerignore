@@ -1,0 +1,11 @@
+.git
+build/
+*.md
+docs/
+.sisyphus/
+docker/
+k8s/
+helm/
+.github/
+*.test
+*.out

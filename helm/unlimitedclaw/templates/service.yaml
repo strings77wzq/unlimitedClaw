@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "unlimitedclaw.fullname" . }}-gateway
+  labels:
+    {{- include "unlimitedclaw.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "unlimitedclaw.selectorLabels" . | nindent 4 }}
+    component: gateway
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP

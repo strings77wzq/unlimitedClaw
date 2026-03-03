@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: unlimitedclaw-config
+  namespace: unlimitedclaw
+data:
+  config.json: |
+    {
+      "port": 18790,
+      "log_level": "info",
+      "openai": {
+        "model": "gpt-4",
+        "temperature": 0.7,
+        "max_tokens": 2000
+      },
+      "server": {
+        "read_timeout": 30,
+        "write_timeout": 30,
+        "idle_timeout": 120
+      }
+    }

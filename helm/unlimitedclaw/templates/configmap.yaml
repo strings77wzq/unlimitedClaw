@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "unlimitedclaw.fullname" . }}-config
+  labels:
+    {{- include "unlimitedclaw.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {
+      "port": {{ .Values.config.port }},
+      "log_level": {{ .Values.config.log_level | quote }},
+      "openai": {
+        "model": {{ .Values.config.openai.model | quote }},
+        "temperature": {{ .Values.config.openai.temperature }},
+        "max_tokens": {{ .Values.config.openai.max_tokens }}
+      },
+      "server": {
+        "read_timeout": {{ .Values.config.server.read_timeout }},
+        "write_timeout": {{ .Values.config.server.write_timeout }},
+        "idle_timeout": {{ .Values.config.server.idle_timeout }}
+      }
+    }

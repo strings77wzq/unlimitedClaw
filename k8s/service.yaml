@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: unlimitedclaw-gateway
+  namespace: unlimitedclaw
+spec:
+  type: ClusterIP
+  selector:
+    app: unlimitedclaw
+    component: gateway
+  ports:
+    - port: 80
+      targetPort: 18790
+      protocol: TCP
