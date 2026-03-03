@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strin/unlimitedclaw/pkg/providers"
-	"github.com/strin/unlimitedclaw/pkg/tools"
+	"github.com/strings77wzq/unlimitedClaw/pkg/providers"
+	"github.com/strings77wzq/unlimitedClaw/pkg/tools"
 )
 
 func TestProviderError(t *testing.T) {

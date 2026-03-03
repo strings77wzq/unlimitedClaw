@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/strin/unlimitedclaw/pkg/logger"
+	"github.com/strings77wzq/unlimitedClaw/pkg/logger"
 )
 
 type Middleware func(http.Handler) http.Handler

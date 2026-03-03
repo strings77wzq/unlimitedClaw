@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strin/unlimitedclaw/pkg/bus"
+	"github.com/strings77wzq/unlimitedClaw/pkg/bus"
 )
 
 // TestRunOnce verifies one-shot message mode works

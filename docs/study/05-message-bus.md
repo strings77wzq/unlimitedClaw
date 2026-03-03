@@ -644,7 +644,7 @@ bus.Close()
 ```go
 package cli
 
-import "github.com/strin/unlimitedclaw/pkg/agent"
+import "github.com/strings77wzq/unlimitedClaw/pkg/agent"
 
 type CLI struct {
     agent *agent.Agent  // 直接依赖 Agent
@@ -667,7 +667,7 @@ func (c *CLI) ReadInput() {
 ```go
 package cli
 
-import "github.com/strin/unlimitedclaw/pkg/bus"
+import "github.com/strings77wzq/unlimitedClaw/pkg/bus"
 
 type CLI struct {
     bus bus.Bus  // 只依赖 Bus 接口
@@ -705,7 +705,7 @@ func (c *CLI) Start() {
 ```go
 package http
 
-import "github.com/strin/unlimitedclaw/pkg/bus"
+import "github.com/strings77wzq/unlimitedClaw/pkg/bus"
 
 type Server struct {
     bus bus.Bus

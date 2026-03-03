@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/strin/unlimitedclaw/pkg/bus"
+	"github.com/strings77wzq/unlimitedClaw/pkg/bus"
 )
 
 const (

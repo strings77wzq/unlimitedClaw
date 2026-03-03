@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/strin/unlimitedclaw/pkg/tools"
+	"github.com/strings77wzq/unlimitedClaw/pkg/tools"
 )
 
 // MockProvider is a configurable LLM provider for testing.

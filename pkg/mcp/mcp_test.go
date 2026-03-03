@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strin/unlimitedclaw/pkg/tools"
+	"github.com/strings77wzq/unlimitedClaw/pkg/tools"
 )
 
 func TestJSONRPCSerialization(t *testing.T) {

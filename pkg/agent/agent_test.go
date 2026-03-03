@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strin/unlimitedclaw/pkg/bus"
-	"github.com/strin/unlimitedclaw/pkg/config"
-	"github.com/strin/unlimitedclaw/pkg/logger"
-	"github.com/strin/unlimitedclaw/pkg/providers"
-	"github.com/strin/unlimitedclaw/pkg/session"
-	"github.com/strin/unlimitedclaw/pkg/tools"
+	"github.com/strings77wzq/unlimitedClaw/pkg/bus"
+	"github.com/strings77wzq/unlimitedClaw/pkg/config"
+	"github.com/strings77wzq/unlimitedClaw/pkg/logger"
+	"github.com/strings77wzq/unlimitedClaw/pkg/providers"
+	"github.com/strings77wzq/unlimitedClaw/pkg/session"
+	"github.com/strings77wzq/unlimitedClaw/pkg/tools"
 )
 
 func setupTestAgent(t *testing.T) (*Agent, bus.Bus, *providers.MockProvider, *tools.Registry) {

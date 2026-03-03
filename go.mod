@@ -1,4 +1,4 @@
-module github.com/strin/unlimitedclaw
+module github.com/strings77wzq/unlimitedClaw
 
 go 1.25.0
 

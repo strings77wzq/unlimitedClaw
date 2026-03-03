@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strin/unlimitedclaw/pkg/providers"
+	"github.com/strings77wzq/unlimitedClaw/pkg/providers"
 )
 
 func TestNewSession(t *testing.T) {

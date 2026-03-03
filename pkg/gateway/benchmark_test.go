@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/strin/unlimitedclaw/pkg/logger"
+	"github.com/strings77wzq/unlimitedClaw/pkg/logger"
 )
 
 // benchAgentHandler is a minimal mock for benchmark tests

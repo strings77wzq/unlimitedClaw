@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strin/unlimitedclaw/pkg/logger"
+	"github.com/strings77wzq/unlimitedClaw/pkg/logger"
 )
 
 type mockAgentHandler struct {

@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/strin/unlimitedclaw/pkg/providers"
+	"github.com/strings77wzq/unlimitedClaw/pkg/providers"
 )
 
 // Session holds a conversation's state.

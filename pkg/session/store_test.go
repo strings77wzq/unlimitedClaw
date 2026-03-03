@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/strin/unlimitedclaw/pkg/providers"
+	"github.com/strings77wzq/unlimitedClaw/pkg/providers"
 )
 
 func TestMemoryStoreSaveAndGet(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/strin/unlimitedclaw/pkg/bus"
-	"github.com/strin/unlimitedclaw/pkg/logger"
+	"github.com/strings77wzq/unlimitedClaw/pkg/bus"
+	"github.com/strings77wzq/unlimitedClaw/pkg/logger"
 )
 
 // AdapterConfig configures the Telegram adapter

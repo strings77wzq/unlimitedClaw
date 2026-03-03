@@ -617,8 +617,8 @@ import (
     "context"
     "fmt"
     
-    "github.com/strin/unlimitedclaw/pkg/providers"
-    "github.com/strin/unlimitedclaw/pkg/tools"
+    "github.com/strings77wzq/unlimitedClaw/pkg/providers"
+    "github.com/strings77wzq/unlimitedClaw/pkg/tools"
 )
 
 type Provider struct {
@@ -713,8 +713,8 @@ func (p *Provider) convertResponse(resp *AnthropicResponse) *providers.LLMRespon
 // cmd/unlimitedclaw/main.go
 
 import (
-    "github.com/strin/unlimitedclaw/pkg/providers"
-    "github.com/strin/unlimitedclaw/pkg/providers/anthropic"
+    "github.com/strings77wzq/unlimitedClaw/pkg/providers"
+    "github.com/strings77wzq/unlimitedClaw/pkg/providers/anthropic"
 )
 
 func main() {

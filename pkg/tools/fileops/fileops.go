@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/strin/unlimitedclaw/pkg/tools"
+	"github.com/strings77wzq/unlimitedClaw/pkg/tools"
 )
 
 // safePath validates and returns an absolute path within the workspace.
