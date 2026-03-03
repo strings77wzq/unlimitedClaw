@@ -51,16 +51,22 @@ func newVersionCommand() *cobra.Command {
 }
 
 func newAgentCommand() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "agent",
 		Short: "Start the AI agent",
 		Long:  "Start the unlimitedClaw AI agent process",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("Starting AI agent...")
-			// TODO: Implement agent startup
+			message, _ := cmd.Flags().GetString("message")
+			if message != "" {
+				fmt.Printf("Agent one-shot mode: %s\n", message)
+				return nil
+			}
+			fmt.Println("Interactive mode not yet wired (need agent setup)")
 			return nil
 		},
 	}
+	cmd.Flags().StringP("message", "m", "", "Send a single message and exit")
+	return cmd
 }
 
 func newGatewayCommand() *cobra.Command {
