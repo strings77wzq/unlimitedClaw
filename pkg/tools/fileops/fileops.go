@@ -23,6 +23,14 @@ func safePath(workspace, requestedPath string) (string, error) {
 		return "", fmt.Errorf("failed to resolve workspace path: %w", err)
 	}
 
+	// Resolve symlinks in the workspace path itself (e.g. /tmp -> /private/tmp on macOS,
+	// or similar CI runner symlinked paths) so that later symlink checks compare correctly.
+	evalWorkspace, err := filepath.EvalSymlinks(absWorkspace)
+	if err != nil {
+		// Fall back to the un-resolved workspace if it doesn't exist yet
+		evalWorkspace = absWorkspace
+	}
+
 	// Clean and resolve the requested path
 	cleanPath := filepath.Clean(requestedPath)
 
@@ -48,9 +56,11 @@ func safePath(workspace, requestedPath string) (string, error) {
 		return "", fmt.Errorf("path traversal detected: path is outside workspace")
 	}
 
-	// Check for symlinks that escape workspace (if file exists)
+	// Check for symlinks that escape workspace (if file exists).
+	// Compare against the symlink-resolved workspace to handle cases where
+	// the workspace path itself traverses symlinks (e.g. /tmp on macOS CI).
 	if evalPath, err := filepath.EvalSymlinks(absPath); err == nil {
-		evalRel, err := filepath.Rel(absWorkspace, evalPath)
+		evalRel, err := filepath.Rel(evalWorkspace, evalPath)
 		if err != nil || strings.HasPrefix(evalRel, "..") {
 			return "", fmt.Errorf("symlink resolves outside workspace")
 		}
@@ -59,7 +69,7 @@ func safePath(workspace, requestedPath string) (string, error) {
 		// This handles case where the file doesn't exist yet but parent might be a symlink
 		parent := filepath.Dir(absPath)
 		if evalParent, err := filepath.EvalSymlinks(parent); err == nil {
-			evalRel, err := filepath.Rel(absWorkspace, evalParent)
+			evalRel, err := filepath.Rel(evalWorkspace, evalParent)
 			if err != nil || strings.HasPrefix(evalRel, "..") {
 				return "", fmt.Errorf("parent symlink resolves outside workspace")
 			}
