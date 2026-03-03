@@ -336,3 +336,113 @@ func TestMiddlewareChain(t *testing.T) {
 		}
 	}
 }
+
+type mockStreamingHandler struct {
+	tokens []string
+	err    error
+}
+
+func (m *mockStreamingHandler) HandleMessage(ctx context.Context, sessionID, message string) (string, error) {
+	return strings.Join(m.tokens, ""), m.err
+}
+
+func (m *mockStreamingHandler) HandleMessageStream(ctx context.Context, sessionID, message string, ch chan<- string) error {
+	defer close(ch)
+	for _, tok := range m.tokens {
+		ch <- tok
+	}
+	return m.err
+}
+
+type flushRecorder struct {
+	*httptest.ResponseRecorder
+}
+
+func (f *flushRecorder) Flush() {}
+
+func newFlushRecorder() *flushRecorder {
+	return &flushRecorder{httptest.NewRecorder()}
+}
+
+func TestChatStreamEndpoint(t *testing.T) {
+	log := logger.NopLogger()
+	agent := &mockStreamingHandler{tokens: []string{"Hello", " ", "world"}}
+	cfg := DefaultServerConfig()
+	server := NewServer(cfg, agent, log)
+
+	reqBody := chatRequest{SessionID: "s1", Message: "hi"}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/chat/stream", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := newFlushRecorder()
+
+	server.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rec.Code)
+	}
+
+	if ct := rec.Header().Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("expected Content-Type 'text/event-stream', got %q", ct)
+	}
+
+	respBody := rec.Body.String()
+	if !strings.Contains(respBody, "data: Hello") {
+		t.Errorf("expected 'data: Hello' in response, got %q", respBody)
+	}
+	if !strings.Contains(respBody, "data: world") {
+		t.Errorf("expected 'data: world' in response, got %q", respBody)
+	}
+	if !strings.Contains(respBody, "event: done") {
+		t.Errorf("expected 'event: done' in response, got %q", respBody)
+	}
+}
+
+func TestChatStreamFallbackToSync(t *testing.T) {
+	log := logger.NopLogger()
+	agent := &mockAgentHandler{response: "sync response"}
+	cfg := DefaultServerConfig()
+	server := NewServer(cfg, agent, log)
+
+	reqBody := chatRequest{SessionID: "s1", Message: "hi"}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/chat/stream", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := newFlushRecorder()
+
+	server.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rec.Code)
+	}
+
+	respBody := rec.Body.String()
+	if !strings.Contains(respBody, "data: sync response") {
+		t.Errorf("expected sync fallback data, got %q", respBody)
+	}
+	if !strings.Contains(respBody, "event: done") {
+		t.Errorf("expected 'event: done', got %q", respBody)
+	}
+}
+
+func TestChatStreamEmptyMessage(t *testing.T) {
+	log := logger.NopLogger()
+	agent := &mockStreamingHandler{tokens: []string{"x"}}
+	cfg := DefaultServerConfig()
+	server := NewServer(cfg, agent, log)
+
+	reqBody := chatRequest{SessionID: "s1", Message: ""}
+	body, _ := json.Marshal(reqBody)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/chat/stream", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := newFlushRecorder()
+
+	server.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", rec.Code)
+	}
+}

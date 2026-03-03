@@ -15,16 +15,16 @@ unlimitedClaw is a progressive learning project that implements a full AI agent 
 - **Tool System** — Pluggable tool registry with built-in exec, file operations, and web search
 - **LLM Providers** — OpenAI and Anthropic adapters with streaming support
 - **MCP Client** — Model Context Protocol client for external tool integration
-- **RAG Pipeline** — Retrieval-Augmented Generation with TF-IDF indexing and similarity search
-- **Skills System** — Composable skill registry for agent capability extension
-- **Long-term Memory** — Persistent memory with importance scoring and decay
-- **Multiple Channels** — CLI, HTTP Gateway, and Telegram bot adapters
+- **RAG Pipeline** — Retrieval-Augmented Generation with TF-IDF indexing, similarity search, and OpenAI embedding support
+- **Skills System** — Composable skill registry with built-in skills (summarize, code-review)
+- **Long-term Memory** — Persistent memory with importance scoring and exponential decay
+- **Multiple Channels** — CLI, HTTP Gateway (with SSE streaming), and Telegram bot adapters
 - **Message Bus** — Async pub/sub event system for decoupled communication
 - **Session Management** — Conversation history with SQLite persistence
 - **Security** — Auth middleware, rate limiting, and command sandboxing
 - **Concurrency** — Worker pool, semaphore, and rate limiter primitives
 - **Prometheus Metrics** — Pure Go metrics (counter/gauge/histogram) with exposition endpoint
-- **Cloud-Native** — Docker, Kubernetes, Helm, CI/CD, and monitoring stack
+- **Cloud-Native** — Docker, Kubernetes, Helm, CI/CD, monitoring stack, and config hot reload (SIGHUP)
 
 ## Architecture
 
@@ -129,20 +129,20 @@ unlimitedClaw/
 │   │   ├── cli/                # CLI adapter
 │   │   └── telegram/           # Telegram bot adapter
 │   ├── concurrency/            # Pool, semaphore, rate limiter
-│   ├── config/                 # Configuration system
-│   ├── gateway/                # HTTP gateway server
+│   ├── config/                 # Configuration system with hot reload
+│   ├── gateway/                # HTTP gateway server with SSE streaming
 │   ├── logger/                 # Structured logging (slog)
 │   ├── mcp/                    # MCP protocol client
-│   ├── memory/                 # Long-term memory system
+│   ├── memory/                 # Long-term memory with importance decay
 │   ├── metrics/                # Prometheus-compatible metrics
 │   ├── providers/              # LLM provider interface
 │   │   ├── openai/             # OpenAI adapter
 │   │   └── anthropic/          # Anthropic adapter
-│   ├── rag/                    # RAG pipeline
+│   ├── rag/                    # RAG pipeline with OpenAI embedder
 │   ├── routing/                # Error handling + fallback
 │   ├── security/               # Auth, rate limiting, sandbox
 │   ├── session/                # Session + history management
-│   ├── skills/                 # Skills registry
+│   ├── skills/                 # Skills registry + built-in skills
 │   ├── store/                  # SQLite persistence (pure Go)
 │   └── tools/                  # Tool interface + registry
 │       ├── exec/               # Command execution tool

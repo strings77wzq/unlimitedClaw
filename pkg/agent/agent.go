@@ -17,6 +17,11 @@ const (
 	TopicOutbound            = "outbound"
 )
 
+// Runner abstracts the agent lifecycle for dependency injection and testing.
+type Runner interface {
+	Start(ctx context.Context)
+}
+
 // Agent is the core orchestrator that runs the ReAct loop
 type Agent struct {
 	bus               bus.Bus
@@ -100,4 +105,7 @@ func (a *Agent) Start(ctx context.Context) {
 			a.handleMessage(ctx, msg)
 		}
 	}
+
+	var _ Runner = (*Agent)(nil)
+
 }

@@ -57,9 +57,6 @@ func (fm *FileMemory) Store(ctx context.Context, entry *Entry) error {
 }
 
 func (fm *FileMemory) Recall(ctx context.Context, query string, limit int) ([]*Entry, error) {
-	fm.mu.RLock()
-	defer fm.mu.RUnlock()
-
 	if query == "" {
 		return nil, nil
 	}
@@ -69,28 +66,35 @@ func (fm *FileMemory) Recall(ctx context.Context, query string, limit int) ([]*E
 		return nil, nil
 	}
 
+	now := time.Now()
+
 	type scoredEntry struct {
 		entry *Entry
-		score int
+		score float64
 	}
 
+	// Read phase: score all entries under RLock
+	fm.mu.RLock()
 	var scored []scoredEntry
 	for _, entry := range fm.entries {
-		score := 0
+		wordScore := 0
 		contentLower := strings.ToLower(entry.Content)
 
 		for _, word := range queryWords {
-			score += strings.Count(contentLower, word)
+			wordScore += strings.Count(contentLower, word)
 
 			for _, tag := range entry.Tags {
-				score += strings.Count(strings.ToLower(tag), word)
+				wordScore += strings.Count(strings.ToLower(tag), word)
 			}
 		}
 
-		if score > 0 {
-			scored = append(scored, scoredEntry{entry: entry, score: score})
+		if wordScore > 0 {
+			decayed := entry.DecayedImportance(now, DefaultDecayLambda)
+			finalScore := float64(wordScore) * (1.0 + decayed)
+			scored = append(scored, scoredEntry{entry: entry, score: finalScore})
 		}
 	}
+	fm.mu.RUnlock()
 
 	sort.Slice(scored, func(i, j int) bool {
 		return scored[i].score > scored[j].score
@@ -100,6 +104,13 @@ func (fm *FileMemory) Recall(ctx context.Context, query string, limit int) ([]*E
 	for i := 0; i < len(scored) && i < limit; i++ {
 		result = append(result, scored[i].entry)
 	}
+
+	// Write phase: update AccessedAt under write lock
+	fm.mu.Lock()
+	for _, entry := range result {
+		entry.AccessedAt = now
+	}
+	fm.mu.Unlock()
 
 	return result, nil
 }

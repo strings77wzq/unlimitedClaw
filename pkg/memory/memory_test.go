@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"math"
 	"os"
 	"path/filepath"
 	"sync"
@@ -404,5 +405,97 @@ func TestConcurrentAccess(t *testing.T) {
 
 	if len(results) != 10 {
 		t.Errorf("Expected 10 entries after concurrent operations, got %d", len(results))
+	}
+}
+
+func TestNewEntryImportanceDefault(t *testing.T) {
+	entry := NewEntry("test content", "tag1")
+	if entry.Importance != 1.0 {
+		t.Errorf("Expected default Importance 1.0, got %f", entry.Importance)
+	}
+	if entry.AccessedAt.IsZero() {
+		t.Error("Expected AccessedAt to be set")
+	}
+}
+
+func TestDecayedImportance(t *testing.T) {
+	entry := NewEntry("test")
+	entry.Importance = 1.0
+
+	past := time.Now().Add(-24 * time.Hour)
+	entry.AccessedAt = past
+
+	now := time.Now()
+	decayed := entry.DecayedImportance(now, DefaultDecayLambda)
+
+	// After 24h with lambda=0.001: exp(-0.001 * 24) ≈ 0.9763
+	expected := math.Exp(-DefaultDecayLambda * 24.0)
+	if math.Abs(decayed-expected) > 0.01 {
+		t.Errorf("Expected decayed importance ~%f, got %f", expected, decayed)
+	}
+
+	freshEntry := NewEntry("fresh")
+	freshEntry.Importance = 1.0
+	freshDecayed := freshEntry.DecayedImportance(time.Now(), DefaultDecayLambda)
+	if freshDecayed < 0.99 {
+		t.Errorf("Expected fresh entry decayed importance ~1.0, got %f", freshDecayed)
+	}
+}
+
+func TestRecallImportanceWeighting(t *testing.T) {
+	mem := NewInMemoryStore()
+	ctx := context.Background()
+
+	lowImportance := NewEntry("golang patterns", "golang")
+	lowImportance.Importance = 0.1
+
+	highImportance := NewEntry("golang tips", "golang")
+	highImportance.Importance = 10.0
+
+	if err := mem.Store(ctx, lowImportance); err != nil {
+		t.Fatalf("Store failed: %v", err)
+	}
+	if err := mem.Store(ctx, highImportance); err != nil {
+		t.Fatalf("Store failed: %v", err)
+	}
+
+	results, err := mem.Recall(ctx, "golang", 10)
+	if err != nil {
+		t.Fatalf("Recall failed: %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("Expected 2 results, got %d", len(results))
+	}
+
+	if results[0].ID != highImportance.ID {
+		t.Errorf("Expected high-importance entry first, got entry with Importance=%f", results[0].Importance)
+	}
+}
+
+func TestRecallUpdatesAccessedAt(t *testing.T) {
+	mem := NewInMemoryStore()
+	ctx := context.Background()
+
+	entry := NewEntry("golang test", "golang")
+	originalAccess := entry.AccessedAt
+
+	if err := mem.Store(ctx, entry); err != nil {
+		t.Fatalf("Store failed: %v", err)
+	}
+
+	time.Sleep(10 * time.Millisecond)
+
+	results, err := mem.Recall(ctx, "golang", 10)
+	if err != nil {
+		t.Fatalf("Recall failed: %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Fatalf("Expected 1 result, got %d", len(results))
+	}
+
+	if !results[0].AccessedAt.After(originalAccess) {
+		t.Error("Expected AccessedAt to be updated after Recall")
 	}
 }

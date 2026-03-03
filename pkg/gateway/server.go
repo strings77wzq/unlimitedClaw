@@ -13,6 +13,13 @@ type AgentHandler interface {
 	HandleMessage(ctx context.Context, sessionID string, message string) (string, error)
 }
 
+// StreamingAgentHandler extends AgentHandler with token-by-token streaming.
+// If the agent implements this interface, the SSE endpoint will use it.
+type StreamingAgentHandler interface {
+	AgentHandler
+	HandleMessageStream(ctx context.Context, sessionID string, message string, tokens chan<- string) error
+}
+
 // ServerConfig holds HTTP server configuration
 type ServerConfig struct {
 	Addr            string        // default ":18790"
