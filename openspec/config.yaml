@@ -1,0 +1,11 @@
+version: "1.0"
+context: |
+  unlimitedClaw is a Go AI assistant learning project following PicoClaw's architecture.
+  Tech stack: Go 1.25+, cobra CLI, modernc.org/sqlite, Docker, Kubernetes.
+  Architecture: Hexagonal/Clean Architecture with cmd/ composition roots and pkg/ core + adapters.
+rules:
+  - Use Go stdlib testing package + testify/assert for tests
+  - Follow Go naming conventions (camelCase, PascalCase for exports)
+  - Use constructor-based dependency injection, no DI frameworks
+  - All interfaces defined in core, implementations in adapter packages
+  - CGO_ENABLED=0 compatible only (pure Go dependencies)
