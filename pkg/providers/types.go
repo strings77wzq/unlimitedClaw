@@ -65,3 +65,19 @@ type LLMProvider interface {
 	// Name returns the provider name (e.g., "openai", "anthropic").
 	Name() string
 }
+
+// StreamingProvider is an optional interface for providers that support
+// token-by-token streaming. Use Go type assertion to check support:
+//
+//	if sp, ok := provider.(StreamingProvider); ok {
+//	    resp, err := sp.ChatStream(ctx, msgs, tools, model, opts, onToken)
+//	}
+type StreamingProvider interface {
+	LLMProvider
+
+	// ChatStream sends messages and streams the response token-by-token.
+	// onToken is called for each text delta as it arrives.
+	// Returns the complete LLMResponse (with Usage) after streaming finishes.
+	ChatStream(ctx context.Context, messages []Message, toolDefs []tools.ToolDefinition,
+		model string, opts *ChatOptions, onToken func(token string)) (*LLMResponse, error)
+}
