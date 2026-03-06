@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,7 +23,10 @@ import (
 	"github.com/strings77wzq/unlimitedClaw/pkg/gateway"
 	"github.com/strings77wzq/unlimitedClaw/pkg/logger"
 	"github.com/strings77wzq/unlimitedClaw/pkg/providers"
+	"github.com/strings77wzq/unlimitedClaw/pkg/providers/anthropic"
+	"github.com/strings77wzq/unlimitedClaw/pkg/providers/openai"
 	"github.com/strings77wzq/unlimitedClaw/pkg/session"
+	"github.com/strings77wzq/unlimitedClaw/pkg/term"
 	"github.com/strings77wzq/unlimitedClaw/pkg/tools"
 )
 
@@ -76,31 +81,138 @@ func newAgentCommand() *cobra.Command {
 		Long:  "Start the unlimitedClaw AI agent process",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			message, _ := cmd.Flags().GetString("message")
+			modelFlag, _ := cmd.Flags().GetString("model")
 
 			cfg, err := loadConfig(cmd)
 			if err != nil {
 				return err
 			}
 
+			// Override default model if -M flag is set
+			if modelFlag != "" {
+				if _, findErr := cfg.FindModel(modelFlag); findErr != nil {
+					return fmt.Errorf("model %q not found in config; available: %s", modelFlag, listModelNames(cfg))
+				}
+				cfg.Agents.Defaults.ModelName = modelFlag
+			}
+
 			b := bus.New()
 			registry := tools.NewRegistry()
-			factory := providers.NewFactory()
-			factory.Register("mock", providers.NewMockProvider("mock"))
-			store := session.NewMemoryStore()
-			history := session.NewHistoryManager(cfg.Agents.Defaults.MaxTokens)
+			factory := registerProviders(cfg)
 			log := logger.New(logger.DefaultOptions())
 
-			ag := agent.New(b, registry, factory, store, history, log, cfg)
+			// Use SQLite-backed session store for persistence
+			store, err := openAgentSessionStore(cmd)
+			if err != nil {
+				// Fall back to in-memory store if SQLite fails (e.g., read-only fs)
+				log.Warn("SQLite session store unavailable, using in-memory", "err", err)
+				store = nil
+			}
+			var sessionStore session.SessionStore
+			if store != nil {
+				defer store.Close()
+				sessionStore = store
+			} else {
+				sessionStore = session.NewMemoryStore()
+			}
+
+			history := session.NewHistoryManager(cfg.Agents.Defaults.MaxTokens)
+			ag := agent.New(b, registry, factory, sessionStore, history, log, cfg)
+
+			// Handle piped stdin: combine with -m flag message
+			if !term.IsInputTTY() {
+				stdinContent, readErr := term.ReadStdin()
+				if readErr != nil {
+					return fmt.Errorf("reading stdin: %w", readErr)
+				}
+				stdinContent = strings.TrimSpace(stdinContent)
+				if stdinContent != "" {
+					if message != "" {
+						message = message + "\n\n" + stdinContent
+					} else {
+						message = stdinContent
+					}
+				}
+			}
 
 			if message != "" {
 				return runAgentOneShot(ag, b, message)
+			}
+
+			// If stdin is piped but no message came through, nothing to do
+			if !term.IsInputTTY() {
+				return fmt.Errorf("no input: use -m flag or pipe content via stdin")
 			}
 
 			return runAgentInteractive(ag, b)
 		},
 	}
 	cmd.Flags().StringP("message", "m", "", "Send a single message and exit")
+	cmd.Flags().StringP("model", "M", "", "Model to use (overrides config default)")
 	return cmd
+}
+
+// registerProviders creates a Factory and registers providers from config ModelList.
+func registerProviders(cfg *config.Config) *providers.Factory {
+	factory := providers.NewFactory()
+
+	// Track registered vendors to avoid re-registering with different keys
+	registered := make(map[string]bool)
+
+	for _, entry := range cfg.ModelList {
+		vendor := entry.Vendor()
+		if registered[vendor] {
+			continue
+		}
+		registered[vendor] = true
+
+		switch vendor {
+		case "openai":
+			var opts []openai.Option
+			if entry.APIBase != "" {
+				opts = append(opts, openai.WithAPIBase(entry.APIBase))
+			}
+			factory.Register(vendor, openai.New(entry.APIKey, opts...))
+		case "anthropic":
+			var opts []anthropic.Option
+			if entry.APIBase != "" {
+				opts = append(opts, anthropic.WithAPIBase(entry.APIBase))
+			}
+			factory.Register(vendor, anthropic.New(entry.APIKey, opts...))
+		case "mock":
+			factory.Register(vendor, providers.NewMockProvider("mock"))
+		}
+	}
+
+	// Ensure mock is always available for testing/default config
+	if !registered["mock"] {
+		factory.Register("mock", providers.NewMockProvider("mock"))
+	}
+
+	return factory
+}
+
+// listModelNames returns a comma-separated list of configured model names.
+func listModelNames(cfg *config.Config) string {
+	names := make([]string, 0, len(cfg.ModelList))
+	for _, entry := range cfg.ModelList {
+		names = append(names, entry.ModelName)
+	}
+	return strings.Join(names, ", ")
+}
+
+// openAgentSessionStore opens the SQLite session store in the config directory.
+func openAgentSessionStore(cmd *cobra.Command) (*session.SQLiteAdapter, error) {
+	configPath, err := getConfigPath(cmd)
+	if err != nil {
+		return nil, err
+	}
+	dir := filepath.Dir(configPath)
+	if err := ensureConfigDir(configPath); err != nil {
+		return nil, err
+	}
+	dbPath := filepath.Join(dir, "sessions.db")
+	return session.NewSQLiteAdapter(dbPath)
 }
 
 func runAgentOneShot(ag *agent.Agent, b bus.Bus, message string) error {
@@ -210,8 +322,7 @@ func newGatewayCommand() *cobra.Command {
 
 			b := bus.New()
 			registry := tools.NewRegistry()
-			factory := providers.NewFactory()
-			factory.Register("mock", providers.NewMockProvider("mock"))
+			factory := registerProviders(cfg)
 			store := session.NewMemoryStore()
 			history := session.NewHistoryManager(cfg.Agents.Defaults.MaxTokens)
 			log := logger.New(logger.DefaultOptions())
