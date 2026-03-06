@@ -50,6 +50,7 @@ func NewRootCommand() *cobra.Command {
 		newGatewayCommand(),
 		newConfigCommand(),
 		newStatusCommand(),
+		newSessionCommand(),
 	)
 
 	return cmd
