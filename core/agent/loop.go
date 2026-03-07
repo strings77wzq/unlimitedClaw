@@ -8,6 +8,8 @@ import (
 	"github.com/strings77wzq/golem/core/providers"
 	"github.com/strings77wzq/golem/core/session"
 	"github.com/strings77wzq/golem/core/tools"
+	"github.com/strings77wzq/golem/core/usage"
+	"golang.org/x/sync/errgroup"
 )
 
 func (a *Agent) handleMessage(ctx context.Context, msg bus.InboundMessage) {
@@ -104,11 +106,21 @@ func (a *Agent) processMessage(
 				a.logger.Error("failed to save session", err)
 			}
 
-			usage := &bus.TokenUsage{
+			tokenUsage := &bus.TokenUsage{
 				PromptTokens:     resp.Usage.PromptTokens,
 				CompletionTokens: resp.Usage.CompletionTokens,
 				TotalTokens:      resp.Usage.TotalTokens,
 			}
+
+			// Record usage for cost tracking
+			if a.tracker != nil && tokenUsage != nil {
+				a.tracker.Record(msg.SessionID, modelName, usage.TokenUsage{
+					PromptTokens:     tokenUsage.PromptTokens,
+					CompletionTokens: tokenUsage.CompletionTokens,
+					TotalTokens:      tokenUsage.TotalTokens,
+				})
+			}
+
 			if emit != nil {
 				finalContent := resp.Content
 				// When streaming, tokens already emitted via onToken callback.
@@ -121,10 +133,10 @@ func (a *Agent) processMessage(
 					Content:   finalContent,
 					Role:      bus.RoleAssistant,
 					Done:      true,
-					Usage:     usage,
+					Usage:     tokenUsage,
 				})
 			}
-			return resp.Content, usage, nil
+			return resp.Content, tokenUsage, nil
 		}
 
 		sess.AddMessage(providers.Message{
@@ -133,24 +145,45 @@ func (a *Agent) processMessage(
 			ToolCalls: resp.ToolCalls,
 		})
 
-		for _, tc := range resp.ToolCalls {
-			tool, found := a.toolRegistry.Get(tc.Name)
-			if !found {
+		// Execute tool calls in parallel for better performance
+		var wg errgroup.Group
+		results := make([]*tools.ToolResult, len(resp.ToolCalls))
+		errors := make([]error, len(resp.ToolCalls))
+
+		for i, tc := range resp.ToolCalls {
+			i, tc := i, tc // capture loop variables
+			wg.Go(func() error {
+				tool, found := a.toolRegistry.Get(tc.Name)
+				if !found {
+					errors[i] = fmt.Errorf("tool %q not found", tc.Name)
+					return nil
+				}
+
+				result, err := tool.Execute(ctx, tc.Arguments)
+				results[i] = result
+				errors[i] = err
+				return nil
+			})
+		}
+
+		// Wait for all tool executions to complete
+		if err := wg.Wait(); err != nil {
+			a.logger.Error("tool execution failed", err)
+		}
+
+		// Process results in order (but execution was parallel)
+		for i, tc := range resp.ToolCalls {
+			if errors[i] != nil {
 				sess.AddMessage(providers.Message{
 					Role:       providers.RoleTool,
-					Content:    fmt.Sprintf("tool %q not found", tc.Name),
+					Content:    fmt.Sprintf("tool execution error: %v", errors[i]),
 					ToolCallID: tc.ID,
 				})
 				continue
 			}
 
-			result, err := tool.Execute(ctx, tc.Arguments)
-			if err != nil {
-				sess.AddMessage(providers.Message{
-					Role:       providers.RoleTool,
-					Content:    fmt.Sprintf("tool execution error: %v", err),
-					ToolCallID: tc.ID,
-				})
+			result := results[i]
+			if result == nil {
 				continue
 			}
 

@@ -13,6 +13,7 @@ import (
 	"github.com/strings77wzq/golem/core/providers"
 	"github.com/strings77wzq/golem/core/session"
 	"github.com/strings77wzq/golem/core/tools"
+	"github.com/strings77wzq/golem/core/usage"
 	"github.com/strings77wzq/golem/foundation/logger"
 )
 
@@ -44,6 +45,7 @@ type Agent struct {
 	config            *config.Config
 	systemPrompt      string
 	maxToolIterations int
+	tracker           *usage.Tracker
 }
 
 // Option is a functional option for configuring Agent
@@ -60,6 +62,13 @@ func WithMaxToolIterations(n int) Option {
 func WithSystemPrompt(prompt string) Option {
 	return func(a *Agent) {
 		a.systemPrompt = prompt
+	}
+}
+
+// WithTracker sets the usage tracker for cost accounting
+func WithTracker(tracker *usage.Tracker) Option {
+	return func(a *Agent) {
+		a.tracker = tracker
 	}
 }
 
@@ -84,6 +93,7 @@ func New(
 		config:            cfg,
 		systemPrompt:      cfg.Agents.Defaults.SystemPrompt,
 		maxToolIterations: DefaultMaxToolIterations,
+		tracker:           usage.NewTracker(),
 	}
 
 	for _, opt := range opts {
