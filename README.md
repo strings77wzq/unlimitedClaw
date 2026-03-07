@@ -204,44 +204,49 @@ cp config/config.example.json ~/.unlimitedclaw/config.json
 
 ```
 unlimitedClaw/
-├── cmd/unlimitedclaw/          # CLI entry point (cobra)
-├── pkg/
-│   ├── agent/                  # ReAct loop engine
-│   ├── bus/                    # Message bus (pub/sub)
-│   ├── channels/
-│   │   ├── cli/                # CLI adapter
-│   │   └── telegram/           # Telegram bot adapter
-│   ├── concurrency/            # Pool, semaphore, rate limiter
-│   ├── config/                 # Configuration system with hot reload
-│   ├── gateway/                # HTTP gateway server with SSE streaming
-│   ├── logger/                 # Structured logging (slog)
-│   ├── mcp/                    # MCP protocol client
-│   ├── memory/                 # Long-term memory with importance decay
-│   ├── metrics/                # Prometheus-compatible metrics
-│   ├── providers/              # LLM provider interface
-│   │   ├── openai/             # OpenAI adapter
-│   │   └── anthropic/          # Anthropic adapter
-│   ├── usage/                  # Token usage tracking & pricing
-│   ├── rag/                    # RAG pipeline with OpenAI embedder
-│   ├── routing/                # Error handling + fallback
-│   ├── security/               # Auth, rate limiting, sandbox
-│   ├── session/                # Session + history management
-│   ├── skills/                 # Skills registry + built-in skills
-│   ├── store/                  # SQLite persistence (pure Go)
-│   └── tools/                  # Tool interface + registry
-│       ├── exec/               # Command execution tool
-│       ├── fileops/            # File operations tool
-│       └── websearch/          # Web search tool
-├── openspec/                   # OpenSpec SDD specifications
-├── docs/study/                 # Learning guides (Chinese)
-├── docker/                     # Dockerfile + Compose
-│   └── monitoring/             # Prometheus + Grafana configs
-├── k8s/                        # Kubernetes manifests
-├── helm/unlimitedclaw/         # Helm chart
-├── .github/workflows/          # CI/CD pipelines
-├── scripts/                    # Utility scripts
-├── Makefile                    # Build automation
-└── .golangci.yaml              # Linter configuration
+├── cmd/unlimitedclaw/              # CLI entry point (cobra)
+├── core/                           # Core domain logic
+│   ├── agent/                      # ReAct loop engine
+│   ├── bus/                        # Message bus (pub/sub)
+│   ├── config/                     # Configuration system with hot reload
+│   ├── providers/                  # LLM provider interface
+│   │   ├── openai/                 # OpenAI adapter
+│   │   └── anthropic/              # Anthropic adapter
+│   ├── session/                    # Session + history management
+│   ├── tools/                      # Tool interface + registry
+│   │   ├── exec/                   # Command execution tool
+│   │   ├── fileops/                # File operations tool
+│   │   └── websearch/              # Web search tool
+│   └── usage/                      # Token usage tracking & pricing
+├── foundation/                     # Infrastructure primitives
+│   ├── concurrency/                # Pool, semaphore, rate limiter
+│   ├── logger/                     # Structured logging (slog)
+│   ├── store/                      # SQLite persistence (pure Go)
+│   └── term/                       # Terminal detection
+├── feature/                        # Optional feature modules
+│   ├── mcp/                        # MCP protocol client
+│   ├── memory/                     # Long-term memory with importance decay
+│   ├── rag/                        # RAG pipeline with OpenAI embedder
+│   ├── routing/                    # Error handling + fallback
+│   └── skills/                     # Skills registry + built-in skills
+│       └── builtins/               # Built-in skills (summarize, code-review)
+├── internal/                       # Internal-only packages
+│   ├── channels/                   # I/O adapters
+│   │   ├── cli/                    # CLI adapter
+│   │   └── telegram/               # Telegram bot adapter
+│   ├── gateway/                    # HTTP gateway server with SSE streaming
+│   ├── metrics/                    # Prometheus-compatible metrics
+│   └── security/                   # Auth, rate limiting, sandbox
+├── openspec/                       # OpenSpec SDD specifications
+├── docs/study/                     # Learning guides (Chinese)
+├── docker/                         # Dockerfile + Compose
+│   └── monitoring/                 # Prometheus + Grafana configs
+├── k8s/                            # Kubernetes manifests
+├── helm/unlimitedclaw/             # Helm chart
+├── .github/workflows/              # CI/CD pipelines
+├── scripts/                        # Utility scripts
+├── Makefile                        # Build automation
+└── .golangci.yaml                  # Linter configuration
 ```
 
 ## Testing
@@ -258,10 +263,10 @@ go test -race -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
 
 # Run benchmarks
-go test -bench=. -benchmem ./pkg/gateway/...
+go test -bench=. -benchmem ./internal/gateway/...
 ```
 
-**Test coverage: 76.9%** across 26 packages (200+ tests, 9 Example functions for godoc).
+**Test coverage: 79.2%** across 27 packages (200+ tests, 9 Example functions for godoc).
 
 ## Kubernetes Deployment
 
@@ -287,10 +292,10 @@ The `docs/study/` directory contains Chinese learning guides:
 ## Design Principles
 
 - **Pure Go** — Zero CGO dependencies (`CGO_ENABLED=0`), single static binary
-- **Hexagonal Architecture** — Ports (interfaces) and adapters (implementations)
+- **Layered Architecture** — 4-layer structure (core/foundation/feature/internal) with clean dependency flow
 - **Cloud-Native** — Docker, Kubernetes, Helm, Prometheus metrics
 - **Security First** — Auth middleware, rate limiting, command sandboxing
-- **Test-Driven** — 76.9% coverage, race-detector clean, benchmark suite
+- **Test-Driven** — 79.2% coverage, race-detector clean, benchmark suite
 
 ## Tech Stack
 

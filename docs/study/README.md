@@ -69,17 +69,30 @@ PicoClaw 是一个 Python 实现的 AI 助手框架。unlimitedClaw 借鉴了其
 unlimitedClaw/
 ├── cmd/                          # 应用程序入口点（composition root）
 │   └── unlimitedclaw/            # CLI 主程序
-├── pkg/                          # 公共包（可被外部引用）
+├── core/                         # 核心领域逻辑
 │   ├── agent/                    # ReAct 循环核心逻辑
 │   ├── bus/                      # 消息总线（Pub/Sub）
-│   ├── tools/                    # 工具接口和注册表
+│   ├── config/                   # 配置管理
 │   ├── providers/                # LLM 提供商抽象
 │   ├── session/                  # 会话管理
-│   ├── usage/                    # Token 用量追踪
-│   ├── channels/                 # I/O 适配器（CLI 等）
-│   ├── config/                   # 配置管理
-│   └── logger/                   # 结构化日志
+│   ├── tools/                    # 工具接口和注册表
+│   └── usage/                    # Token 用量追踪
+├── foundation/                   # 基础设施原语
+│   ├── concurrency/              # 并发原语
+│   ├── logger/                   # 结构化日志
+│   ├── store/                    # SQLite 持久化
+│   └── term/                     # 终端检测
+├── feature/                      # 可选功能模块
+│   ├── mcp/                      # MCP 协议客户端
+│   ├── memory/                   # 长期记忆
+│   ├── rag/                      # RAG 管线
+│   ├── routing/                  # 错误处理和 fallback
+│   └── skills/                   # 技能注册表
 ├── internal/                     # 内部包（仅供本项目使用）
+│   ├── channels/                 # I/O 适配器（CLI、Telegram）
+│   ├── gateway/                  # HTTP Gateway
+│   ├── metrics/                  # Prometheus 指标
+│   └── security/                 # 认证、限流、沙箱
 ├── config/                       # 配置文件
 ├── docs/                         # 文档
 │   └── study/                    # 本学习指南
@@ -128,8 +141,8 @@ go build -o build/unlimitedclaw ./cmd/unlimitedclaw
 go test ./...
 
 # 运行特定包的测试
-go test ./pkg/bus/
-go test ./pkg/tools/
+go test ./core/bus/
+go test ./core/tools/
 ```
 
 ### 查看帮助

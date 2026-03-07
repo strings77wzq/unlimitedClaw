@@ -2,7 +2,7 @@ version: "1.0"
 context: |
   unlimitedClaw is a Go AI assistant learning project following PicoClaw's architecture.
   Tech stack: Go 1.25+, cobra CLI, modernc.org/sqlite, Docker, Kubernetes.
-  Architecture: Hexagonal/Clean Architecture with cmd/ composition roots and pkg/ core + adapters.
+  Architecture: 4-layer architecture with cmd/ composition root, core/ domain logic, foundation/ primitives, feature/ optional modules, and internal/ adapters.
 rules:
   - Use Go stdlib testing package + testify/assert for tests
   - Follow Go naming conventions (camelCase, PascalCase for exports)

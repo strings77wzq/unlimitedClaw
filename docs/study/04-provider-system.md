@@ -46,7 +46,7 @@ Agent → LLMProvider 接口 → OpenAI Adapter → OpenAI API
 ### Provider 系统的包结构
 
 ```
-pkg/providers/
+core/providers/
 ├── types.go           # LLMProvider 接口、Message、ToolCall、LLMResponse
 ├── factory.go         # Provider 工厂（路由）
 ├── mock.go            # MockProvider（用于测试）
@@ -57,7 +57,7 @@ pkg/providers/
 
 ## LLMProvider 接口设计
 
-参见 `pkg/providers/types.go` 第 58-67 行：
+参见 `core/providers/types.go` 第 58-67 行：
 
 ```go
 type LLMProvider interface {
@@ -150,7 +150,7 @@ func (p *AnthropicProvider) Name() string {
 
 ### 1. Message - 消息
 
-参见 `pkg/providers/types.go` 第 19-25 行：
+参见 `core/providers/types.go` 第 19-25 行：
 
 ```go
 type Message struct {
@@ -161,7 +161,7 @@ type Message struct {
 }
 ```
 
-**Role 枚举**（参见 `pkg/providers/types.go` 第 9-17 行）：
+**Role 枚举**（参见 `core/providers/types.go` 第 9-17 行）：
 
 ```go
 type Role string
@@ -233,7 +233,7 @@ Message{
 
 ### 2. ToolCall - 工具调用
 
-参见 `pkg/providers/types.go` 第 28-32 行：
+参见 `core/providers/types.go` 第 28-32 行：
 
 ```go
 type ToolCall struct {
@@ -259,7 +259,7 @@ ToolCall{
 
 ### 3. LLMResponse - LLM 响应
 
-参见 `pkg/providers/types.go` 第 42-48 行：
+参见 `core/providers/types.go` 第 42-48 行：
 
 ```go
 type LLMResponse struct {
@@ -271,7 +271,7 @@ type LLMResponse struct {
 }
 ```
 
-**TokenUsage**（参见 `pkg/providers/types.go` 第 34-39 行）：
+**TokenUsage**（参见 `core/providers/types.go` 第 34-39 行）：
 
 ```go
 type TokenUsage struct {
@@ -319,7 +319,7 @@ LLMResponse{
 
 ### 4. ChatOptions - 调用选项
 
-参见 `pkg/providers/types.go` 第 50-56 行：
+参见 `core/providers/types.go` 第 50-56 行：
 
 ```go
 type ChatOptions struct {
@@ -348,7 +348,7 @@ response, err := provider.Chat(ctx, messages, toolDefs, "gpt-4", opts)
 
 **Factory** 负责管理和路由 Provider，根据模型名称自动选择正确的 Provider。
 
-参见 `pkg/providers/factory.go` 第 9-13 行：
+参见 `core/providers/factory.go` 第 9-13 行：
 
 ```go
 type Factory struct {
@@ -363,7 +363,7 @@ type Factory struct {
 
 注册一个 Provider。
 
-参见 `pkg/providers/factory.go` 第 22-27 行：
+参见 `core/providers/factory.go` 第 22-27 行：
 
 ```go
 func (f *Factory) Register(vendor string, provider LLMProvider) {
@@ -391,7 +391,7 @@ factory.Register("anthropic", anthropicProvider)
 
 根据 vendor 名称获取 Provider。
 
-参见 `pkg/providers/factory.go` 第 29-40 行：
+参见 `core/providers/factory.go` 第 29-40 行：
 
 ```go
 func (f *Factory) GetProvider(vendor string) (LLMProvider, error) {
@@ -410,7 +410,7 @@ func (f *Factory) GetProvider(vendor string) (LLMProvider, error) {
 
 根据模型名称获取 Provider，自动提取 vendor 前缀。
 
-参见 `pkg/providers/factory.go` 第 42-60 行：
+参见 `core/providers/factory.go` 第 42-60 行：
 
 ```go
 func (f *Factory) GetProviderForModel(model string) (LLMProvider, string, error) {
@@ -510,7 +510,7 @@ factory.GetProvider("openai")
 
 unlimitedClaw 提供了 `MockProvider` 用于测试，无需调用真实的 LLM API。
 
-参见 `pkg/providers/mock.go`：
+参见 `core/providers/mock.go`：
 
 ```go
 type MockProvider struct {
@@ -603,7 +603,7 @@ func TestAgentToolCall(t *testing.T) {
 ### 步骤 1：创建 Provider 包
 
 ```
-pkg/providers/anthropic/
+core/providers/anthropic/
 ├── provider.go       # Provider 实现
 ├── client.go         # API 客户端
 ├── converter.go      # 格式转换
@@ -619,8 +619,8 @@ import (
     "context"
     "fmt"
     
-    "github.com/strings77wzq/unlimitedClaw/pkg/providers"
-    "github.com/strings77wzq/unlimitedClaw/pkg/tools"
+    "github.com/strings77wzq/unlimitedClaw/core/providers"
+    "github.com/strings77wzq/unlimitedClaw/core/tools"
 )
 
 type Provider struct {
@@ -715,8 +715,8 @@ func (p *Provider) convertResponse(resp *AnthropicResponse) *providers.LLMRespon
 // cmd/unlimitedclaw/main.go
 
 import (
-    "github.com/strings77wzq/unlimitedClaw/pkg/providers"
-    "github.com/strings77wzq/unlimitedClaw/pkg/providers/anthropic"
+    "github.com/strings77wzq/unlimitedClaw/core/providers"
+    "github.com/strings77wzq/unlimitedClaw/core/providers/anthropic"
 )
 
 func main() {
@@ -895,7 +895,7 @@ sequenceDiagram
 
 Wave 2 引入了 `StreamingProvider` 可选接口，支持 token-by-token 流式输出：
 
-参见 `pkg/providers/types.go` 第 69-83 行：
+参见 `core/providers/types.go` 第 69-83 行：
 
 ```go
 type StreamingProvider interface {

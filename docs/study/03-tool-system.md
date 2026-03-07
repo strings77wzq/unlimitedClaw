@@ -33,7 +33,7 @@
 ### 工具系统的包结构
 
 ```
-pkg/tools/
+core/tools/
 ├── tool.go           # Tool 接口、ToolParameter、ToolResult、ToolDefinition
 ├── registry.go       # ToolRegistry（线程安全的工具管理）
 ├── mock.go           # MockTool（用于测试）
@@ -43,7 +43,7 @@ pkg/tools/
 
 ## Tool 接口设计
 
-参见 `pkg/tools/tool.go` 第 6-11 行：
+参见 `core/tools/tool.go` 第 6-11 行：
 
 ```go
 type Tool interface {
@@ -90,7 +90,7 @@ func (t *WeatherTool) Description() string {
 
 返回工具的参数列表。
 
-**ToolParameter 结构**（参见 `pkg/tools/tool.go` 第 14-19 行）：
+**ToolParameter 结构**（参见 `core/tools/tool.go` 第 14-19 行）：
 
 ```go
 type ToolParameter struct {
@@ -177,7 +177,7 @@ func (t *WeatherTool) Execute(ctx context.Context, args map[string]interface{}) 
 
 **ToolResult** 是工具系统的核心创新之一，它通过两个通道分别服务 LLM 和用户。
 
-参见 `pkg/tools/tool.go` 第 24-29 行：
+参见 `core/tools/tool.go` 第 24-29 行：
 
 ```go
 type ToolResult struct {
@@ -326,7 +326,7 @@ Assistant: 北京今天天气晴朗，温度 15°C...
 
 **ToolRegistry** 负责管理所有可用工具，提供线程安全的注册、查询和列举功能。
 
-参见 `pkg/tools/registry.go` 第 9-13 行：
+参见 `core/tools/registry.go` 第 9-13 行：
 
 ```go
 type Registry struct {
@@ -341,7 +341,7 @@ type Registry struct {
 
 注册一个工具。
 
-参见 `pkg/tools/registry.go` 第 24-35 行：
+参见 `core/tools/registry.go` 第 24-35 行：
 
 ```go
 func (r *Registry) Register(tool Tool) error {
@@ -378,7 +378,7 @@ if err != nil {
 
 根据名称获取工具。
 
-参见 `pkg/tools/registry.go` 第 39-45 行：
+参见 `core/tools/registry.go` 第 39-45 行：
 
 ```go
 func (r *Registry) Get(name string) (Tool, bool) {
@@ -409,7 +409,7 @@ result, err := tool.Execute(ctx, args)
 
 返回所有工具，**按字母顺序**排序。
 
-参见 `pkg/tools/registry.go` 第 47-66 行：
+参见 `core/tools/registry.go` 第 47-66 行：
 
 ```go
 func (r *Registry) ListTools() []Tool {
@@ -441,7 +441,7 @@ func (r *Registry) ListTools() []Tool {
 
 返回所有工具的定义，**按字母顺序**排序。
 
-参见 `pkg/tools/registry.go` 第 69-85 行：
+参见 `core/tools/registry.go` 第 69-85 行：
 
 ```go
 func (r *Registry) ListDefinitions() []ToolDefinition {
@@ -453,7 +453,7 @@ func (r *Registry) ListDefinitions() []ToolDefinition {
 
 ## 为什么字母顺序很重要
 
-参见 `pkg/tools/registry.go` 第 47-50 行的注释：
+参见 `core/tools/registry.go` 第 47-50 行的注释：
 
 ```go
 // CRITICAL: Alphabetical ordering is required for LLM KV cache optimization.
@@ -511,7 +511,7 @@ import (
     "fmt"
     "math"
     
-    "github.com/strings77wzq/unlimitedClaw/pkg/tools"
+    "github.com/strings77wzq/unlimitedClaw/core/tools"
 )
 
 type CalculatorTool struct {
@@ -630,7 +630,7 @@ func TestCalculatorTool(t *testing.T) {
 
 unlimitedClaw 提供了 `MockTool` 用于测试，无需依赖真实的外部服务。
 
-参见 `pkg/tools/mock.go`：
+参见 `core/tools/mock.go`：
 
 ```go
 type MockTool struct {

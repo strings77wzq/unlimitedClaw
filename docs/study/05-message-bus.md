@@ -72,7 +72,7 @@ bus.Subscribe("outbound").OnMessage(func(msg OutboundMessage) {
 ### 消息总线的包结构
 
 ```
-pkg/bus/
+core/bus/
 ├── bus.go         # Bus 接口和 memBus 实现
 ├── message.go     # InboundMessage、OutboundMessage 定义
 ├── bus_test.go    # Bus 测试
@@ -119,7 +119,7 @@ pkg/bus/
 
 ## Bus 接口设计
 
-参见 `pkg/bus/bus.go` 第 6-11 行：
+参见 `core/bus/bus.go` 第 6-11 行：
 
 ```go
 type Bus interface {
@@ -247,7 +247,7 @@ defer bus.Close()
 
 ## 消息类型定义
 
-参见 `pkg/bus/message.go`：
+参见 `core/bus/message.go`：
 
 ### 1. Role 枚举
 
@@ -266,7 +266,7 @@ const (
 
 ### 2. InboundMessage - 入站消息
 
-参见 `pkg/bus/message.go` 第 14-18 行：
+参见 `core/bus/message.go` 第 14-18 行：
 
 ```go
 type InboundMessage struct {
@@ -290,7 +290,7 @@ InboundMessage{
 
 ### 3. OutboundMessage - 出站消息
 
-参见 `pkg/bus/message.go` 第 21-26 行：
+参见 `core/bus/message.go` 第 21-26 行：
 
 ```go
 type OutboundMessage struct {
@@ -338,7 +338,7 @@ OutboundMessage{
 
 **memBus** 是 Bus 接口的内存实现，适合单机部署。
 
-参见 `pkg/bus/bus.go` 第 14-18 行：
+参见 `core/bus/bus.go` 第 14-18 行：
 
 ```go
 type memBus struct {
@@ -367,7 +367,7 @@ subscribers: map[string][]chan interface{}
 
 ### 创建总线
 
-参见 `pkg/bus/bus.go` 第 20-25 行：
+参见 `core/bus/bus.go` 第 20-25 行：
 
 ```go
 func New() Bus {
@@ -379,7 +379,7 @@ func New() Bus {
 
 ### Publish 实现
 
-参见 `pkg/bus/bus.go` 第 28-47 行：
+参见 `core/bus/bus.go` 第 28-47 行：
 
 ```go
 func (b *memBus) Publish(topic string, msg interface{}) {
@@ -414,7 +414,7 @@ func (b *memBus) Publish(topic string, msg interface{}) {
 
 ### Subscribe 实现
 
-参见 `pkg/bus/bus.go` 第 50-57 行：
+参见 `core/bus/bus.go` 第 50-57 行：
 
 ```go
 func (b *memBus) Subscribe(topic string) <-chan interface{} {
@@ -438,7 +438,7 @@ func (b *memBus) Subscribe(topic string) <-chan interface{} {
 
 ### Unsubscribe 实现
 
-参见 `pkg/bus/bus.go` 第 60-76 行：
+参见 `core/bus/bus.go` 第 60-76 行：
 
 ```go
 func (b *memBus) Unsubscribe(topic string, ch <-chan interface{}) {
@@ -468,7 +468,7 @@ func (b *memBus) Unsubscribe(topic string, ch <-chan interface{}) {
 
 ### Close 实现
 
-参见 `pkg/bus/bus.go` 第 79-96 行：
+参见 `core/bus/bus.go` 第 79-96 行：
 
 ```go
 func (b *memBus) Close() {
@@ -519,7 +519,7 @@ for _, ch := range subs {
 
 ### 解决方案：select + default
 
-参见 `pkg/bus/bus.go` 第 42-45 行：
+参见 `core/bus/bus.go` 第 42-45 行：
 
 ```go
 for _, ch := range subs {
@@ -644,7 +644,7 @@ bus.Close()
 ```go
 package cli
 
-import "github.com/strings77wzq/unlimitedClaw/pkg/agent"
+import "github.com/strings77wzq/unlimitedClaw/core/agent"
 
 type CLI struct {
     agent *agent.Agent  // 直接依赖 Agent
@@ -667,7 +667,7 @@ func (c *CLI) ReadInput() {
 ```go
 package cli
 
-import "github.com/strings77wzq/unlimitedClaw/pkg/bus"
+import "github.com/strings77wzq/unlimitedClaw/core/bus"
 
 type CLI struct {
     bus bus.Bus  // 只依赖 Bus 接口
@@ -705,7 +705,7 @@ func (c *CLI) Start() {
 ```go
 package http
 
-import "github.com/strings77wzq/unlimitedClaw/pkg/bus"
+import "github.com/strings77wzq/unlimitedClaw/core/bus"
 
 type Server struct {
     bus bus.Bus

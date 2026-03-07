@@ -17,17 +17,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"github.com/strings77wzq/unlimitedClaw/pkg/agent"
-	"github.com/strings77wzq/unlimitedClaw/pkg/bus"
-	"github.com/strings77wzq/unlimitedClaw/pkg/config"
-	"github.com/strings77wzq/unlimitedClaw/pkg/gateway"
-	"github.com/strings77wzq/unlimitedClaw/pkg/logger"
-	"github.com/strings77wzq/unlimitedClaw/pkg/providers"
-	"github.com/strings77wzq/unlimitedClaw/pkg/providers/anthropic"
-	"github.com/strings77wzq/unlimitedClaw/pkg/providers/openai"
-	"github.com/strings77wzq/unlimitedClaw/pkg/session"
-	"github.com/strings77wzq/unlimitedClaw/pkg/term"
-	"github.com/strings77wzq/unlimitedClaw/pkg/tools"
+	"github.com/strings77wzq/unlimitedClaw/core/agent"
+	"github.com/strings77wzq/unlimitedClaw/core/bus"
+	"github.com/strings77wzq/unlimitedClaw/core/config"
+	"github.com/strings77wzq/unlimitedClaw/internal/gateway"
+	"github.com/strings77wzq/unlimitedClaw/foundation/logger"
+	"github.com/strings77wzq/unlimitedClaw/core/providers"
+	"github.com/strings77wzq/unlimitedClaw/core/providers/anthropic"
+	"github.com/strings77wzq/unlimitedClaw/core/providers/openai"
+	"github.com/strings77wzq/unlimitedClaw/core/session"
+	"github.com/strings77wzq/unlimitedClaw/foundation/term"
+	"github.com/strings77wzq/unlimitedClaw/core/tools"
 )
 
 // Version info injected at build time via ldflags

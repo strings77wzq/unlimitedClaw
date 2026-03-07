@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-03-07
+
+### Changed
+
+#### Architecture Refactoring (Wave 2.5)
+- Reorganized flat `pkg/` into 4-layer architecture: `core/`, `foundation/`, `feature/`, `internal/`
+- `core/`: agent, bus, config, providers, session, tools, usage (7 packages — domain logic)
+- `foundation/`: concurrency, logger, store, term (4 packages — infrastructure primitives)
+- `feature/`: mcp, memory, rag, routing, skills (6 packages — optional modules)
+- `internal/`: channels, gateway, metrics, security (5 packages — internal-only)
+- Updated all import paths across 40+ source files (63 occurrences)
+- Updated all documentation to reflect new directory structure
+- Removed empty `pkg/` directory
+- All 27 test packages continue to pass, 79.2% coverage maintained
+
 ## [0.2.0] - 2026-03-07
 
 ### Added
@@ -26,7 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `resolveSessionID()` function with "last" keyword support
 
 #### Token Usage
-- `pkg/usage/` package with `Tracker`, `SessionUsage`, and `GetPricing()`
+- `core/usage/` package with `Tracker`, `SessionUsage`, and `GetPricing()`
 - Built-in pricing for 25+ models across all 7 providers
 - Token usage display on stderr: `[tokens: X prompt + Y completion = Z total]`
 

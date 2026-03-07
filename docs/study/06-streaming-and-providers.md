@@ -69,7 +69,7 @@ sequenceDiagram
 
 ## StreamingProvider 接口设计
 
-Wave 2 引入了 `StreamingProvider` 可选接口，定义在 `pkg/providers/types.go`：
+Wave 2 引入了 `StreamingProvider` 可选接口，定义在 `core/providers/types.go`：
 
 ```go
 // StreamingProvider 是一个可选接口，支持 token-by-token 流式输出。
@@ -137,7 +137,7 @@ if sp, ok := provider.(providers.StreamingProvider); ok {
 
 ## OpenAI SSE 实现
 
-OpenAI 的流式输出实现位于 `pkg/providers/openai/openai.go` 的 `ChatStream()` 和 `parseSSEStream()` 方法。
+OpenAI 的流式输出实现位于 `core/providers/openai/openai.go` 的 `ChatStream()` 和 `parseSSEStream()` 方法。
 
 ### 请求构造
 
@@ -249,7 +249,7 @@ sequenceDiagram
 
 ## Anthropic SSE 实现
 
-Anthropic 的流式实现位于 `pkg/providers/anthropic/anthropic.go` 的 `ChatStream()` 和 `parseAnthropicSSE()` 方法。
+Anthropic 的流式实现位于 `core/providers/anthropic/anthropic.go` 的 `ChatStream()` 和 `parseAnthropicSSE()` 方法。
 
 ### 与 OpenAI 的区别
 
@@ -544,12 +544,12 @@ func newAgentCommand() *cobra.Command {
 
 ## Token 用量追踪
 
-Wave 2 新增了 `pkg/usage/` 包，用于追踪和统计 Token 消耗及成本。
+Wave 2 新增了 `core/usage/` 包，用于追踪和统计 Token 消耗及成本。
 
 ### 包结构
 
 ```
-pkg/usage/
+core/usage/
 ├── tracker.go       # Tracker、SessionUsage、NewTracker()、Record()、GetSession()、GetTotal()
 ├── pricing.go       # ModelPricing、GetPricing()、defaultPricing（25+ 模型定价表）
 └── tracker_test.go  # 7 个测试
