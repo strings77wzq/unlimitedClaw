@@ -29,6 +29,7 @@ import (
 	toolexec "github.com/strings77wzq/golem/core/tools/exec"
 	"github.com/strings77wzq/golem/core/tools/fileops"
 	"github.com/strings77wzq/golem/core/tools/websearch"
+	"github.com/strings77wzq/golem/feature/skills"
 	"github.com/strings77wzq/golem/foundation/logger"
 	"github.com/strings77wzq/golem/foundation/term"
 	"github.com/strings77wzq/golem/internal/channels/tui"
@@ -90,11 +91,16 @@ func newAgentCommand() *cobra.Command {
 			modelFlag, _ := cmd.Flags().GetString("model")
 			continueFlag, _ := cmd.Flags().GetString("continue")
 			noTUI, _ := cmd.Flags().GetBool("no-tui")
+			skillsDir, _ := cmd.Flags().GetString("skills-dir")
+			skillsFlag, _ := cmd.Flags().GetString("skills")
 
 			cfg, err := loadConfig(cmd)
 			if err != nil {
 				return err
 			}
+
+			// Initialize logger early for skills loading
+			log := logger.New(logger.DefaultOptions())
 
 			if modelFlag != "" {
 				if _, findErr := cfg.FindModel(modelFlag); findErr != nil {
@@ -103,11 +109,43 @@ func newAgentCommand() *cobra.Command {
 				cfg.Agents.Defaults.ModelName = modelFlag
 			}
 
+			// Load skills from directory
+			skillRegistry := skills.NewRegistry()
+			if skillsDir != "" {
+				loader := skills.NewLoader()
+				loaded, loadErr := loader.LoadFromDirectory(skillsDir)
+				if loadErr != nil {
+					log.Warn("failed to load skills from directory", "dir", skillsDir, "err", loadErr)
+				} else {
+					for _, s := range loaded {
+						if regErr := skillRegistry.Register(s); regErr != nil {
+							log.Warn("failed to register skill", "name", s.Name, "err", regErr)
+						} else {
+							log.Info("loaded skill", "name", s.Name)
+						}
+					}
+				}
+			}
+
+			// Enable specific skills by name
+			if skillsFlag != "" {
+				names := strings.Split(skillsFlag, ",")
+				for _, name := range names {
+					name = strings.TrimSpace(name)
+					if name == "" {
+						continue
+					}
+					// Try to load from builtins or previously loaded
+					// For now, log that the skill is requested
+					log.Info("skill requested", "name", name)
+				}
+			}
+
 			b := bus.New()
 			workspace, _ := os.Getwd()
 			registry := buildToolRegistry(workspace)
 			factory := registerProviders(cfg)
-			log := logger.New(logger.DefaultOptions())
+			log = logger.New(logger.DefaultOptions())
 
 			store, err := openAgentSessionStore(cmd)
 			if err != nil {
@@ -122,8 +160,25 @@ func newAgentCommand() *cobra.Command {
 				sessionStore = session.NewMemoryStore()
 			}
 
+			// Inject skill prompts into system prompt
+			systemPrompt := cfg.Agents.Defaults.SystemPrompt
+			if skillRegistry.Count() > 0 {
+				var sb strings.Builder
+				sb.WriteString("Available skills:\n\n")
+				for _, s := range skillRegistry.List() {
+					sb.WriteString(fmt.Sprintf("## Skill: %s\n%s\n\n", s.Name, s.Description))
+					for _, p := range s.Prompts {
+						sb.WriteString(fmt.Sprintf("### %s\n%s\n\n", p.Name, p.Content))
+					}
+				}
+				sb.WriteString("---\n\n")
+				sb.WriteString(systemPrompt)
+				systemPrompt = sb.String()
+				log.Info("injected skill prompts into system prompt", "count", skillRegistry.Count())
+			}
+
 			history := session.NewHistoryManager(cfg.Agents.Defaults.MaxTokens)
-			ag := agent.New(b, registry, factory, sessionStore, history, log, cfg)
+			ag := agent.New(b, registry, factory, sessionStore, history, log, cfg, agent.WithSystemPrompt(systemPrompt))
 
 			var sessionID string
 			if continueFlag != "" {
@@ -174,6 +229,8 @@ func newAgentCommand() *cobra.Command {
 	cmd.Flags().StringP("model", "M", "", "Model to use (overrides config default)")
 	cmd.Flags().StringP("continue", "C", "", `Resume a session ("last" or session-id)`)
 	cmd.Flags().Bool("no-tui", false, "Use plain interactive mode instead of TUI")
+	cmd.Flags().String("skills-dir", "", "Directory containing skills (with skill.json files)")
+	cmd.Flags().String("skills", "", "Comma-separated skill names to enable (e.g., 'summarize,codereview')")
 	return cmd
 }
 
