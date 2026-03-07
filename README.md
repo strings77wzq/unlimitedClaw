@@ -1,7 +1,7 @@
 # Golem
 
-[![CI](https://github.com/strings77wzq/Golem/actions/workflows/ci.yml/badge.svg)](https://github.com/strings77wzq/Golem/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/strings77wzq/Golem)](https://goreportcard.com/report/github.com/strings77wzq/Golem)
+[![CI](https://github.com/strings77wzq/golem/actions/workflows/ci.yml/badge.svg)](https://github.com/strings77wzq/golem/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/strings77wzq/golem)](https://goreportcard.com/report/github.com/strings77wzq/golem)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.25+-blue.svg)](https://go.dev/)
 
@@ -62,19 +62,19 @@ Golem is a progressive learning project that implements a full AI agent system f
 ### From Source (go install)
 
 ```bash
-go install github.com/strings77wzq/Golem/cmd/golem@latest
+go install github.com/strings77wzq/golem/cmd/golem@latest
 ```
 
 This installs the `golem` binary to your `$GOPATH/bin` (or `$HOME/go/bin`). Make sure it's in your `PATH`.
 
 ### From Release Binaries
 
-Download pre-built binaries from the [Releases](https://github.com/strings77wzq/Golem/releases) page. Available for Linux, macOS, and Windows (amd64/arm64).
+Download pre-built binaries from the [Releases](https://github.com/strings77wzq/golem/releases) page. Available for Linux, macOS, and Windows (amd64/arm64).
 
 ### Build from Source
 
 ```bash
-git clone https://github.com/strings77wzq/Golem.git
+git clone https://github.com/strings77wzq/golem.git
 cd Golem
 
 # Build binary (pure Go, no CGO)
@@ -93,11 +93,11 @@ Golem builds and runs natively on Android via [Termux](https://termux.dev/) — 
 pkg install golang
 
 # Install directly via go install
-go install github.com/strings77wzq/Golem/cmd/golem@latest
+go install github.com/strings77wzq/golem/cmd/golem@latest
 # Binary lands at $HOME/go/bin/golem
 
 # Or build from source
-git clone https://github.com/strings77wzq/Golem.git
+git clone https://github.com/strings77wzq/golem.git
 cd Golem
 CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath \
     -o ~/bin/golem ./cmd/golem
@@ -328,6 +328,7 @@ The `docs/study/` directory contains Chinese learning guides:
 4. **Provider System** — LLM provider abstraction and adapters
 5. **Message Bus** — Async event-driven communication
 6. **Streaming & Chinese Providers** — SSE streaming, Chinese LLM integration, session resume
+7. **TUI Channel & init Wizard** — Bubble Tea Elm architecture, recursive Cmd streaming, Termux compatibility
 
 ## Design Principles
 
