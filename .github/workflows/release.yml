@@ -28,13 +28,20 @@ jobs:
             fi
             echo "Building ${GOOS}/${GOARCH}..."
             CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" go build \
+              -trimpath \
               -ldflags "-s -w -X main.version=${{ github.ref_name }}" \
               -o "$output" ./cmd/unlimitedclaw
           done
           ls -la build/
 
+      - name: Extract release notes for this version
+        run: |
+          awk '/^## \[/{count++} count==1{print} count==2{exit}' CHANGELOG.md > /tmp/release_notes.md
+          echo "--- Release notes ---"
+          cat /tmp/release_notes.md
+
       - name: Create release and upload assets
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body_path: /tmp/release_notes.md
           files: build/unlimitedclaw-*
