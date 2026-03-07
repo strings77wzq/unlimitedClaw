@@ -82,13 +82,13 @@ func newAgentCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			message, _ := cmd.Flags().GetString("message")
 			modelFlag, _ := cmd.Flags().GetString("model")
+			continueFlag, _ := cmd.Flags().GetString("continue")
 
 			cfg, err := loadConfig(cmd)
 			if err != nil {
 				return err
 			}
 
-			// Override default model if -M flag is set
 			if modelFlag != "" {
 				if _, findErr := cfg.FindModel(modelFlag); findErr != nil {
 					return fmt.Errorf("model %q not found in config; available: %s", modelFlag, listModelNames(cfg))
@@ -101,10 +101,8 @@ func newAgentCommand() *cobra.Command {
 			factory := registerProviders(cfg)
 			log := logger.New(logger.DefaultOptions())
 
-			// Use SQLite-backed session store for persistence
 			store, err := openAgentSessionStore(cmd)
 			if err != nil {
-				// Fall back to in-memory store if SQLite fails (e.g., read-only fs)
 				log.Warn("SQLite session store unavailable, using in-memory", "err", err)
 				store = nil
 			}
@@ -119,7 +117,15 @@ func newAgentCommand() *cobra.Command {
 			history := session.NewHistoryManager(cfg.Agents.Defaults.MaxTokens)
 			ag := agent.New(b, registry, factory, sessionStore, history, log, cfg)
 
-			// Handle piped stdin: combine with -m flag message
+			var sessionID string
+			if continueFlag != "" {
+				sessionID, err = resolveSessionID(sessionStore, continueFlag)
+				if err != nil {
+					return err
+				}
+				log.Info("resuming session", "id", sessionID)
+			}
+
 			if !term.IsInputTTY() {
 				stdinContent, readErr := term.ReadStdin()
 				if readErr != nil {
@@ -136,19 +142,19 @@ func newAgentCommand() *cobra.Command {
 			}
 
 			if message != "" {
-				return runAgentOneShot(ag, b, message)
+				return runAgentOneShot(ag, b, message, sessionID)
 			}
 
-			// If stdin is piped but no message came through, nothing to do
 			if !term.IsInputTTY() {
 				return fmt.Errorf("no input: use -m flag or pipe content via stdin")
 			}
 
-			return runAgentInteractive(ag, b)
+			return runAgentInteractive(ag, b, sessionID)
 		},
 	}
 	cmd.Flags().StringP("message", "m", "", "Send a single message and exit")
 	cmd.Flags().StringP("model", "M", "", "Model to use (overrides config default)")
+	cmd.Flags().StringP("continue", "C", "", `Resume a session ("last" or session-id)`)
 	return cmd
 }
 
@@ -179,6 +185,37 @@ func registerProviders(cfg *config.Config) *providers.Factory {
 				opts = append(opts, anthropic.WithAPIBase(entry.APIBase))
 			}
 			factory.Register(vendor, anthropic.New(entry.APIKey, opts...))
+		// Chinese LLM providers — all OpenAI-compatible, reuse openai.New with custom API base
+		case "deepseek":
+			base := entry.APIBase
+			if base == "" {
+				base = "https://api.deepseek.com"
+			}
+			factory.Register(vendor, openai.New(entry.APIKey, openai.WithAPIBase(base)))
+		case "moonshot": // Kimi
+			base := entry.APIBase
+			if base == "" {
+				base = "https://api.moonshot.cn"
+			}
+			factory.Register(vendor, openai.New(entry.APIKey, openai.WithAPIBase(base)))
+		case "zhipu": // GLM / ChatGLM
+			base := entry.APIBase
+			if base == "" {
+				base = "https://open.bigmodel.cn/api/paas"
+			}
+			factory.Register(vendor, openai.New(entry.APIKey, openai.WithAPIBase(base)))
+		case "minimax":
+			base := entry.APIBase
+			if base == "" {
+				base = "https://api.minimax.chat"
+			}
+			factory.Register(vendor, openai.New(entry.APIKey, openai.WithAPIBase(base)))
+		case "dashscope": // Qwen / Tongyi Qianwen
+			base := entry.APIBase
+			if base == "" {
+				base = "https://dashscope.aliyuncs.com/compatible-mode"
+			}
+			factory.Register(vendor, openai.New(entry.APIKey, openai.WithAPIBase(base)))
 		case "mock":
 			factory.Register(vendor, providers.NewMockProvider("mock"))
 		}
@@ -215,13 +252,44 @@ func openAgentSessionStore(cmd *cobra.Command) (*session.SQLiteAdapter, error) {
 	return session.NewSQLiteAdapter(dbPath)
 }
 
-func runAgentOneShot(ag *agent.Agent, b bus.Bus, message string) error {
+func resolveSessionID(store session.SessionStore, flag string) (string, error) {
+	if flag != "last" {
+		if _, ok := store.Get(flag); !ok {
+			return "", fmt.Errorf("session %q not found", flag)
+		}
+		return flag, nil
+	}
+	sessions := store.List()
+	if len(sessions) == 0 {
+		return "", fmt.Errorf("no sessions to resume")
+	}
+	latest := sessions[0]
+	for _, s := range sessions[1:] {
+		if s.UpdatedAt.After(latest.UpdatedAt) {
+			latest = s
+		}
+	}
+	return latest.ID, nil
+}
+
+func printUsage(u *bus.TokenUsage) {
+	if u == nil {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "\n[tokens: %d prompt + %d completion = %d total]",
+		u.PromptTokens, u.CompletionTokens, u.TotalTokens)
+}
+
+func runAgentOneShot(ag *agent.Agent, b bus.Bus, message string, existingSessionID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	go ag.Start(ctx)
 
-	sessionID := uuid.New().String()
+	sessionID := existingSessionID
+	if sessionID == "" {
+		sessionID = uuid.New().String()
+	}
 	outCh := b.Subscribe(agent.TopicOutbound)
 	defer b.Unsubscribe(agent.TopicOutbound, outCh)
 
@@ -245,6 +313,7 @@ func runAgentOneShot(ag *agent.Agent, b bus.Bus, message string) error {
 			}
 			fmt.Print(outMsg.Content)
 			if outMsg.Done {
+				printUsage(outMsg.Usage)
 				fmt.Println()
 				return nil
 			}
@@ -252,13 +321,16 @@ func runAgentOneShot(ag *agent.Agent, b bus.Bus, message string) error {
 	}
 }
 
-func runAgentInteractive(ag *agent.Agent, b bus.Bus) error {
+func runAgentInteractive(ag *agent.Agent, b bus.Bus, existingSessionID string) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	go ag.Start(ctx)
 
-	sessionID := uuid.New().String()
+	sessionID := existingSessionID
+	if sessionID == "" {
+		sessionID = uuid.New().String()
+	}
 	outCh := b.Subscribe(agent.TopicOutbound)
 	defer b.Unsubscribe(agent.TopicOutbound, outCh)
 
@@ -277,6 +349,7 @@ func runAgentInteractive(ag *agent.Agent, b bus.Bus) error {
 				}
 				fmt.Print(outMsg.Content)
 				if outMsg.Done {
+					printUsage(outMsg.Usage)
 					fmt.Printf("\n> ")
 				}
 			}

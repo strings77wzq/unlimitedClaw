@@ -13,7 +13,7 @@ unlimitedClaw is a progressive learning project that implements a full AI agent 
 
 - **Agent ReAct Loop** — Think → Act → Observe reasoning cycle with configurable max iterations
 - **Tool System** — Pluggable tool registry with built-in exec, file operations, and web search
-- **LLM Providers** — OpenAI and Anthropic adapters with streaming support
+- **LLM Providers** — OpenAI, Anthropic, DeepSeek, Kimi, GLM, MiniMax, and Qwen adapters with streaming support
 - **MCP Client** — Model Context Protocol client for external tool integration
 - **RAG Pipeline** — Retrieval-Augmented Generation with TF-IDF indexing, similarity search, and OpenAI embedding support
 - **Skills System** — Composable skill registry with built-in skills (summarize, code-review)
@@ -107,6 +107,18 @@ unlimitedclaw agent
 
 # Start HTTP gateway (port 18790)
 unlimitedclaw gateway
+
+# Use a specific model
+unlimitedclaw agent -M deepseek/deepseek-chat -m "Hello"
+
+# Resume last session
+unlimitedclaw agent -C last
+
+# Resume specific session
+unlimitedclaw agent -C <session-id>
+
+# Pipe input from another command
+echo "Summarize this" | unlimitedclaw agent
 ```
 
 ### Configuration Management
@@ -172,6 +184,13 @@ Set API keys via environment variables:
 ```bash
 export OPENAI_API_KEY="sk-..."
 export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Chinese LLM providers
+export DEEPSEEK_API_KEY="sk-..."
+export MOONSHOT_API_KEY="sk-..."
+export ZHIPU_API_KEY="..."
+export MINIMAX_API_KEY="..."
+export DASHSCOPE_API_KEY="sk-..."
 ```
 
 Or use the config file approach:
@@ -202,6 +221,7 @@ unlimitedClaw/
 │   ├── providers/              # LLM provider interface
 │   │   ├── openai/             # OpenAI adapter
 │   │   └── anthropic/          # Anthropic adapter
+│   ├── usage/                  # Token usage tracking & pricing
 │   ├── rag/                    # RAG pipeline with OpenAI embedder
 │   ├── routing/                # Error handling + fallback
 │   ├── security/               # Auth, rate limiting, sandbox
@@ -262,6 +282,7 @@ The `docs/study/` directory contains Chinese learning guides:
 3. **Tool System** — Building a pluggable tool registry
 4. **Provider System** — LLM provider abstraction and adapters
 5. **Message Bus** — Async event-driven communication
+6. **Streaming & Chinese Providers** — SSE streaming, Chinese LLM integration, session resume
 
 ## Design Principles
 

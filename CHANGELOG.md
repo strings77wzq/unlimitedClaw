@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-03-07
+
+### Added
+
+#### Streaming
+- StreamingProvider interface with `ChatStream()` method for token-by-token streaming
+- OpenAI SSE streaming implementation with tool call accumulation and usage tracking
+- Anthropic SSE streaming implementation with event-based state machine
+
+#### Chinese LLM Providers
+- DeepSeek provider (`deepseek/deepseek-chat`, `deepseek/deepseek-reasoner`)
+- Moonshot/Kimi provider (`moonshot/moonshot-v1-8k`, `moonshot/moonshot-v1-32k`, `moonshot/moonshot-v1-128k`)
+- Zhipu/GLM provider (`zhipu/glm-4`, `zhipu/glm-4-flash`, `zhipu/glm-4-plus`)
+- MiniMax provider (`minimax/MiniMax-Text-01`, `minimax/abab6.5s-chat`)
+- DashScope/Qwen provider (`dashscope/qwen-plus`, `dashscope/qwen-turbo`, `dashscope/qwen-max`)
+- All Chinese providers use OpenAI-compatible API format via `openai.New()` with `WithAPIBase()`
+
+#### Session Management
+- `-C` / `--continue` flag for session resume ("last" or explicit session ID)
+- `resolveSessionID()` function with "last" keyword support
+
+#### Token Usage
+- `pkg/usage/` package with `Tracker`, `SessionUsage`, and `GetPricing()`
+- Built-in pricing for 25+ models across all 7 providers
+- Token usage display on stderr: `[tokens: X prompt + Y completion = Z total]`
+
+#### CLI Enhancements
+- `-M` / `--model` flag for runtime model override
+- Stdin pipe support for non-TTY input
+
+#### Documentation
+- Chapter 06: Streaming and Chinese Providers learning guide
+- Updated all existing documentation for Wave 2 features
+
 ## [0.1.0] - 2026-03-03
 
 ### Added

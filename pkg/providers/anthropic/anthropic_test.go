@@ -3,6 +3,7 @@ package anthropic
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -633,4 +634,148 @@ func TestStopReasonMapping(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestChatStreamTextResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var reqBody map[string]interface{}
+		json.NewDecoder(r.Body).Decode(&reqBody)
+
+		if reqBody["stream"] != true {
+			t.Error("Expected stream=true in request")
+		}
+
+		w.Header().Set("Content-Type", "text/event-stream")
+		flusher, _ := w.(http.Flusher)
+
+		events := []string{
+			"event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"model\":\"claude-sonnet-4-20250514\",\"usage\":{\"input_tokens\":25}}}\n",
+			"event: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n",
+			"event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Hello\"}}\n",
+			"event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\" world\"}}\n",
+			"event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n",
+			"event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":15}}\n",
+			"event: message_stop\ndata: {\"type\":\"message_stop\"}\n",
+		}
+
+		for _, ev := range events {
+			fmt.Fprint(w, ev)
+			flusher.Flush()
+		}
+	}))
+	defer server.Close()
+
+	p := New("test-key", WithAPIBase(server.URL))
+	messages := []providers.Message{
+		{Role: providers.RoleUser, Content: "Hi"},
+	}
+
+	var tokens []string
+	result, err := p.ChatStream(context.Background(), messages, nil, "claude-sonnet-4-20250514", nil, func(token string) {
+		tokens = append(tokens, token)
+	})
+	if err != nil {
+		t.Fatalf("ChatStream() error: %v", err)
+	}
+
+	if result.Content != "Hello world" {
+		t.Errorf("Content = %q, want %q", result.Content, "Hello world")
+	}
+	if result.Model != "claude-sonnet-4-20250514" {
+		t.Errorf("Model = %q, want claude-sonnet-4-20250514", result.Model)
+	}
+	if result.StopReason != "stop" {
+		t.Errorf("StopReason = %q, want stop", result.StopReason)
+	}
+	if result.Usage.PromptTokens != 25 {
+		t.Errorf("PromptTokens = %d, want 25", result.Usage.PromptTokens)
+	}
+	if result.Usage.CompletionTokens != 15 {
+		t.Errorf("CompletionTokens = %d, want 15", result.Usage.CompletionTokens)
+	}
+	if result.Usage.TotalTokens != 40 {
+		t.Errorf("TotalTokens = %d, want 40", result.Usage.TotalTokens)
+	}
+	if len(tokens) != 2 || tokens[0] != "Hello" || tokens[1] != " world" {
+		t.Errorf("tokens = %v, want [Hello, ' world']", tokens)
+	}
+}
+
+func TestChatStreamToolUse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		flusher, _ := w.(http.Flusher)
+
+		events := []string{
+			"event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_2\",\"model\":\"claude-sonnet-4-20250514\",\"usage\":{\"input_tokens\":20}}}\n",
+			"event: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n",
+			"event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Let me check\"}}\n",
+			"event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n",
+			"event: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"tool_use\",\"id\":\"toolu_abc\",\"name\":\"get_weather\"}}\n",
+			"event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"city\\\"\"}}\n",
+			"event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\": \\\"Tokyo\\\"}\"}}\n",
+			"event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":1}\n",
+			"event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"tool_use\"},\"usage\":{\"output_tokens\":30}}\n",
+			"event: message_stop\ndata: {\"type\":\"message_stop\"}\n",
+		}
+
+		for _, ev := range events {
+			fmt.Fprint(w, ev)
+			flusher.Flush()
+		}
+	}))
+	defer server.Close()
+
+	p := New("test-key", WithAPIBase(server.URL))
+	messages := []providers.Message{
+		{Role: providers.RoleUser, Content: "Weather in Tokyo?"},
+	}
+
+	result, err := p.ChatStream(context.Background(), messages, nil, "claude-sonnet-4-20250514", nil, nil)
+	if err != nil {
+		t.Fatalf("ChatStream() error: %v", err)
+	}
+
+	if result.Content != "Let me check" {
+		t.Errorf("Content = %q, want 'Let me check'", result.Content)
+	}
+	if result.StopReason != "tool_calls" {
+		t.Errorf("StopReason = %q, want tool_calls", result.StopReason)
+	}
+	if len(result.ToolCalls) != 1 {
+		t.Fatalf("len(ToolCalls) = %d, want 1", len(result.ToolCalls))
+	}
+
+	tc := result.ToolCalls[0]
+	if tc.ID != "toolu_abc" {
+		t.Errorf("ToolCall.ID = %q, want toolu_abc", tc.ID)
+	}
+	if tc.Name != "get_weather" {
+		t.Errorf("ToolCall.Name = %q, want get_weather", tc.Name)
+	}
+	if tc.Arguments["city"] != "Tokyo" {
+		t.Errorf("ToolCall.Arguments[city] = %v, want Tokyo", tc.Arguments["city"])
+	}
+}
+
+func TestChatStreamHTTPError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"error":"invalid key"}`))
+	}))
+	defer server.Close()
+
+	p := New("bad-key", WithAPIBase(server.URL))
+	_, err := p.ChatStream(context.Background(), []providers.Message{{Role: providers.RoleUser, Content: "Hi"}}, nil, "claude-sonnet-4-20250514", nil, nil)
+	if err == nil {
+		t.Fatal("Expected error for 401")
+	}
+	if !strings.Contains(err.Error(), "401") {
+		t.Errorf("Error = %v, want 401", err)
+	}
+}
+
+func TestStreamingProviderInterface(t *testing.T) {
+	p := New("test-key")
+	var _ providers.StreamingProvider = p
 }

@@ -1,5 +1,6 @@
 # Binaries
 build/
+unlimitedclaw
 *.exe
 *.dll
 *.so

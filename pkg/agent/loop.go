@@ -66,6 +66,11 @@ func (a *Agent) handleMessage(ctx context.Context, msg bus.InboundMessage) {
 				Content:   resp.Content,
 				Role:      bus.RoleAssistant,
 				Done:      true,
+				Usage: &bus.TokenUsage{
+					PromptTokens:     resp.Usage.PromptTokens,
+					CompletionTokens: resp.Usage.CompletionTokens,
+					TotalTokens:      resp.Usage.TotalTokens,
+				},
 			})
 			return
 		}

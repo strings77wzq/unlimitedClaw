@@ -20,6 +20,31 @@
       "api_base": "https://api.anthropic.com"
     },
     {
+      "model_name": "deepseek",
+      "model": "deepseek/deepseek-chat",
+      "api_key": "${DEEPSEEK_API_KEY}"
+    },
+    {
+      "model_name": "kimi",
+      "model": "moonshot/moonshot-v1-8k",
+      "api_key": "${MOONSHOT_API_KEY}"
+    },
+    {
+      "model_name": "glm",
+      "model": "zhipu/glm-4",
+      "api_key": "${ZHIPU_API_KEY}"
+    },
+    {
+      "model_name": "minimax",
+      "model": "minimax/MiniMax-Text-01",
+      "api_key": "${MINIMAX_API_KEY}"
+    },
+    {
+      "model_name": "qwen",
+      "model": "dashscope/qwen-plus",
+      "api_key": "${DASHSCOPE_API_KEY}"
+    },
+    {
       "model_name": "mock",
       "model": "mock/echo",
       "api_key": ""

@@ -3,8 +3,10 @@ package openai
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -523,4 +525,136 @@ func TestName(t *testing.T) {
 	if provider.Name() != "openai" {
 		t.Errorf("Expected provider name 'openai', got %s", provider.Name())
 	}
+}
+
+func TestChatStreamTextResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var reqBody map[string]interface{}
+		json.NewDecoder(r.Body).Decode(&reqBody)
+
+		if reqBody["stream"] != true {
+			t.Error("Expected stream=true in request")
+		}
+
+		w.Header().Set("Content-Type", "text/event-stream")
+		flusher, _ := w.(http.Flusher)
+
+		chunks := []string{
+			`{"id":"chatcmpl-1","model":"gpt-4","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}`,
+			`{"id":"chatcmpl-1","model":"gpt-4","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}`,
+			`{"id":"chatcmpl-1","model":"gpt-4","choices":[{"index":0,"delta":{"content":" world"},"finish_reason":null}]}`,
+			`{"id":"chatcmpl-1","model":"gpt-4","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":2,"total_tokens":7}}`,
+		}
+
+		for _, chunk := range chunks {
+			fmt.Fprintf(w, "data: %s\n\n", chunk)
+			flusher.Flush()
+		}
+		fmt.Fprintf(w, "data: [DONE]\n\n")
+		flusher.Flush()
+	}))
+	defer server.Close()
+
+	provider := New("test-key", WithAPIBase(server.URL))
+	messages := []providers.Message{
+		{Role: providers.RoleUser, Content: "Hi"},
+	}
+
+	var tokens []string
+	result, err := provider.ChatStream(context.Background(), messages, nil, "gpt-4", nil, func(token string) {
+		tokens = append(tokens, token)
+	})
+	if err != nil {
+		t.Fatalf("ChatStream failed: %v", err)
+	}
+
+	if result.Content != "Hello world" {
+		t.Errorf("Content = %q, want %q", result.Content, "Hello world")
+	}
+	if result.Model != "gpt-4" {
+		t.Errorf("Model = %q, want %q", result.Model, "gpt-4")
+	}
+	if result.StopReason != "stop" {
+		t.Errorf("StopReason = %q, want %q", result.StopReason, "stop")
+	}
+	if result.Usage.PromptTokens != 5 || result.Usage.CompletionTokens != 2 || result.Usage.TotalTokens != 7 {
+		t.Errorf("Usage = %+v, want {5, 2, 7}", result.Usage)
+	}
+	if len(tokens) != 2 || tokens[0] != "Hello" || tokens[1] != " world" {
+		t.Errorf("tokens = %v, want [Hello, ' world']", tokens)
+	}
+}
+
+func TestChatStreamToolCalls(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		flusher, _ := w.(http.Flusher)
+
+		chunks := []string{
+			`{"id":"chatcmpl-2","model":"gpt-4","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}]}`,
+			`{"id":"chatcmpl-2","model":"gpt-4","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_abc","type":"function","function":{"name":"get_weather","arguments":""}}]},"finish_reason":null}]}`,
+			`{"id":"chatcmpl-2","model":"gpt-4","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\"loc"}}]},"finish_reason":null}]}`,
+			`{"id":"chatcmpl-2","model":"gpt-4","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"ation\":"}}]},"finish_reason":null}]}`,
+			`{"id":"chatcmpl-2","model":"gpt-4","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\"Tokyo\"}"}}]},"finish_reason":null}]}`,
+			`{"id":"chatcmpl-2","model":"gpt-4","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":10,"completion_tokens":8,"total_tokens":18}}`,
+		}
+
+		for _, chunk := range chunks {
+			fmt.Fprintf(w, "data: %s\n\n", chunk)
+			flusher.Flush()
+		}
+		fmt.Fprintf(w, "data: [DONE]\n\n")
+		flusher.Flush()
+	}))
+	defer server.Close()
+
+	provider := New("test-key", WithAPIBase(server.URL))
+	messages := []providers.Message{
+		{Role: providers.RoleUser, Content: "Weather in Tokyo?"},
+	}
+
+	result, err := provider.ChatStream(context.Background(), messages, nil, "gpt-4", nil, nil)
+	if err != nil {
+		t.Fatalf("ChatStream failed: %v", err)
+	}
+
+	if result.StopReason != "tool_calls" {
+		t.Errorf("StopReason = %q, want tool_calls", result.StopReason)
+	}
+	if len(result.ToolCalls) != 1 {
+		t.Fatalf("len(ToolCalls) = %d, want 1", len(result.ToolCalls))
+	}
+
+	tc := result.ToolCalls[0]
+	if tc.ID != "call_abc" {
+		t.Errorf("ToolCall.ID = %q, want call_abc", tc.ID)
+	}
+	if tc.Name != "get_weather" {
+		t.Errorf("ToolCall.Name = %q, want get_weather", tc.Name)
+	}
+	if tc.Arguments["location"] != "Tokyo" {
+		t.Errorf("ToolCall.Arguments[location] = %v, want Tokyo", tc.Arguments["location"])
+	}
+}
+
+func TestChatStreamHTTPError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte(`{"error":"invalid key"}`))
+	}))
+	defer server.Close()
+
+	provider := New("bad-key", WithAPIBase(server.URL))
+	_, err := provider.ChatStream(context.Background(), []providers.Message{{Role: providers.RoleUser, Content: "Hi"}}, nil, "gpt-4", nil, nil)
+	if err == nil {
+		t.Fatal("Expected error for 401")
+	}
+	if !strings.Contains(err.Error(), "401") {
+		t.Errorf("Error = %v, want 401", err)
+	}
+}
+
+func TestStreamingProviderInterface(t *testing.T) {
+	provider := New("test-key")
+	var _ providers.StreamingProvider = provider
 }

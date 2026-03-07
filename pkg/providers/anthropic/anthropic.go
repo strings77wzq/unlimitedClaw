@@ -1,6 +1,7 @@
 package anthropic
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -8,11 +9,14 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/strings77wzq/unlimitedClaw/pkg/providers"
 	"github.com/strings77wzq/unlimitedClaw/pkg/tools"
 )
+
+var _ providers.StreamingProvider = (*Provider)(nil)
 
 const (
 	defaultAPIBase    = "https://api.anthropic.com"
@@ -127,6 +131,210 @@ func (p *Provider) Chat(ctx context.Context, messages []providers.Message, toolD
 	}
 
 	return nil, fmt.Errorf("max retries exceeded: %w", lastErr)
+}
+
+func (p *Provider) ChatStream(
+	ctx context.Context,
+	messages []providers.Message,
+	toolDefs []tools.ToolDefinition,
+	model string,
+	opts *providers.ChatOptions,
+	onToken func(token string),
+) (*providers.LLMResponse, error) {
+	reqBody, err := p.buildRequest(messages, toolDefs, model, opts)
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+	reqBody["stream"] = true
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshal request: %w", err)
+	}
+
+	url := p.apiBase + "/v1/messages"
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+	req.Header.Set("x-api-key", p.apiKey)
+	req.Header.Set("anthropic-version", p.apiVersion)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
+	}
+
+	return p.parseAnthropicSSE(resp.Body, onToken)
+}
+
+func (p *Provider) parseAnthropicSSE(body io.Reader, onToken func(token string)) (*providers.LLMResponse, error) {
+	scanner := bufio.NewScanner(body)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	var contentBuilder strings.Builder
+	var responseModel string
+	var stopReason string
+	var inputTokens, outputTokens int
+
+	type streamBlock struct {
+		Type     string
+		ID       string
+		Name     string
+		ArgsJSON strings.Builder
+	}
+	var blocks []streamBlock
+	var currentBlockIdx int = -1
+
+	var pendingEvent string
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if strings.HasPrefix(line, "event: ") {
+			pendingEvent = strings.TrimPrefix(line, "event: ")
+			continue
+		}
+
+		if !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+		data := strings.TrimPrefix(line, "data: ")
+
+		switch pendingEvent {
+		case "message_start":
+			var ev struct {
+				Message struct {
+					Model string `json:"model"`
+					Usage struct {
+						InputTokens int `json:"input_tokens"`
+					} `json:"usage"`
+				} `json:"message"`
+			}
+			if err := json.Unmarshal([]byte(data), &ev); err == nil {
+				responseModel = ev.Message.Model
+				inputTokens = ev.Message.Usage.InputTokens
+			}
+
+		case "content_block_start":
+			var ev struct {
+				Index        int `json:"index"`
+				ContentBlock struct {
+					Type string `json:"type"`
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				} `json:"content_block"`
+			}
+			if err := json.Unmarshal([]byte(data), &ev); err == nil {
+				currentBlockIdx = ev.Index
+				for len(blocks) <= currentBlockIdx {
+					blocks = append(blocks, streamBlock{})
+				}
+				blocks[currentBlockIdx].Type = ev.ContentBlock.Type
+				blocks[currentBlockIdx].ID = ev.ContentBlock.ID
+				blocks[currentBlockIdx].Name = ev.ContentBlock.Name
+			}
+
+		case "content_block_delta":
+			var ev struct {
+				Index int `json:"index"`
+				Delta struct {
+					Type        string `json:"type"`
+					Text        string `json:"text"`
+					PartialJSON string `json:"partial_json"`
+				} `json:"delta"`
+			}
+			if err := json.Unmarshal([]byte(data), &ev); err == nil {
+				idx := ev.Index
+				if idx >= 0 && idx < len(blocks) {
+					switch ev.Delta.Type {
+					case "text_delta":
+						contentBuilder.WriteString(ev.Delta.Text)
+						if onToken != nil {
+							onToken(ev.Delta.Text)
+						}
+					case "input_json_delta":
+						blocks[idx].ArgsJSON.WriteString(ev.Delta.PartialJSON)
+					}
+				}
+			}
+
+		case "content_block_stop":
+
+		case "message_delta":
+			var ev struct {
+				Delta struct {
+					StopReason string `json:"stop_reason"`
+				} `json:"delta"`
+				Usage struct {
+					OutputTokens int `json:"output_tokens"`
+				} `json:"usage"`
+			}
+			if err := json.Unmarshal([]byte(data), &ev); err == nil {
+				stopReason = ev.Delta.StopReason
+				outputTokens = ev.Usage.OutputTokens
+			}
+
+		case "message_stop":
+
+		case "ping":
+		}
+
+		pendingEvent = ""
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("reading SSE stream: %w", err)
+	}
+
+	// Map stop reason
+	switch stopReason {
+	case "end_turn":
+		stopReason = "stop"
+	case "tool_use":
+		stopReason = "tool_calls"
+	case "max_tokens":
+		stopReason = "length"
+	}
+
+	var toolCalls []providers.ToolCall
+	for _, blk := range blocks {
+		if blk.Type == "tool_use" {
+			var args map[string]interface{}
+			raw := blk.ArgsJSON.String()
+			if raw != "" {
+				if err := json.Unmarshal([]byte(raw), &args); err != nil {
+					args = map[string]interface{}{"raw": raw}
+				}
+			} else {
+				args = make(map[string]interface{})
+			}
+			toolCalls = append(toolCalls, providers.ToolCall{
+				ID:        blk.ID,
+				Name:      blk.Name,
+				Arguments: args,
+			})
+		}
+	}
+
+	return &providers.LLMResponse{
+		Content:   contentBuilder.String(),
+		ToolCalls: toolCalls,
+		Usage: providers.TokenUsage{
+			PromptTokens:     inputTokens,
+			CompletionTokens: outputTokens,
+			TotalTokens:      inputTokens + outputTokens,
+		},
+		Model:      responseModel,
+		StopReason: stopReason,
+	}, nil
 }
 
 // buildRequest constructs the Anthropic API request body.

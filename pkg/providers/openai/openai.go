@@ -1,6 +1,7 @@
 package openai
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -16,6 +17,9 @@ import (
 	"github.com/strings77wzq/unlimitedClaw/pkg/providers"
 	"github.com/strings77wzq/unlimitedClaw/pkg/tools"
 )
+
+// Compile-time check: Provider implements StreamingProvider.
+var _ providers.StreamingProvider = (*Provider)(nil)
 
 const (
 	defaultAPIBase    = "https://api.openai.com"
@@ -119,6 +123,183 @@ func (p *Provider) Chat(
 	}
 
 	return nil, fmt.Errorf("max retries exceeded: %w", lastErr)
+}
+
+func (p *Provider) ChatStream(
+	ctx context.Context,
+	messages []providers.Message,
+	toolDefs []tools.ToolDefinition,
+	model string,
+	opts *providers.ChatOptions,
+	onToken func(token string),
+) (*providers.LLMResponse, error) {
+	reqBody := p.buildRequest(messages, toolDefs, model, opts)
+	reqBody["stream"] = true
+	reqBody["stream_options"] = map[string]interface{}{"include_usage": true}
+
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	url := p.apiBase + "/v1/chat/completions"
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+p.apiKey)
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API request failed (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	return p.parseSSEStream(resp.Body, onToken)
+}
+
+func (p *Provider) parseSSEStream(body io.Reader, onToken func(token string)) (*providers.LLMResponse, error) {
+	scanner := bufio.NewScanner(body)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	var contentBuilder strings.Builder
+	var responseModel string
+	var finishReason string
+	var usage providers.TokenUsage
+
+	type streamToolCall struct {
+		ID       string
+		Name     string
+		ArgsJSON strings.Builder
+	}
+	toolCallMap := make(map[int]*streamToolCall)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			continue
+		}
+		if !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+		data := strings.TrimPrefix(line, "data: ")
+		if data == "[DONE]" {
+			break
+		}
+
+		var chunk struct {
+			Model   string `json:"model"`
+			Choices []struct {
+				Delta struct {
+					Content   string `json:"content"`
+					ToolCalls []struct {
+						Index    int    `json:"index"`
+						ID       string `json:"id"`
+						Type     string `json:"type"`
+						Function struct {
+							Name      string `json:"name"`
+							Arguments string `json:"arguments"`
+						} `json:"function"`
+					} `json:"tool_calls"`
+				} `json:"delta"`
+				FinishReason *string `json:"finish_reason"`
+			} `json:"choices"`
+			Usage *struct {
+				PromptTokens     int `json:"prompt_tokens"`
+				CompletionTokens int `json:"completion_tokens"`
+				TotalTokens      int `json:"total_tokens"`
+			} `json:"usage"`
+		}
+
+		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
+			continue
+		}
+
+		if chunk.Model != "" {
+			responseModel = chunk.Model
+		}
+
+		if chunk.Usage != nil {
+			usage = providers.TokenUsage{
+				PromptTokens:     chunk.Usage.PromptTokens,
+				CompletionTokens: chunk.Usage.CompletionTokens,
+				TotalTokens:      chunk.Usage.TotalTokens,
+			}
+		}
+
+		if len(chunk.Choices) == 0 {
+			continue
+		}
+
+		choice := chunk.Choices[0]
+		if choice.FinishReason != nil {
+			finishReason = *choice.FinishReason
+		}
+
+		if choice.Delta.Content != "" {
+			contentBuilder.WriteString(choice.Delta.Content)
+			if onToken != nil {
+				onToken(choice.Delta.Content)
+			}
+		}
+
+		for _, tc := range choice.Delta.ToolCalls {
+			stc, ok := toolCallMap[tc.Index]
+			if !ok {
+				stc = &streamToolCall{}
+				toolCallMap[tc.Index] = stc
+			}
+			if tc.ID != "" {
+				stc.ID = tc.ID
+			}
+			if tc.Function.Name != "" {
+				stc.Name = tc.Function.Name
+			}
+			if tc.Function.Arguments != "" {
+				stc.ArgsJSON.WriteString(tc.Function.Arguments)
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("reading SSE stream: %w", err)
+	}
+
+	toolCalls := make([]providers.ToolCall, 0, len(toolCallMap))
+	for i := 0; i < len(toolCallMap); i++ {
+		stc, ok := toolCallMap[i]
+		if !ok {
+			continue
+		}
+		var args map[string]interface{}
+		raw := stc.ArgsJSON.String()
+		if raw != "" {
+			if err := json.Unmarshal([]byte(raw), &args); err != nil {
+				args = map[string]interface{}{"raw": raw}
+			}
+		} else {
+			args = make(map[string]interface{})
+		}
+		toolCalls = append(toolCalls, providers.ToolCall{
+			ID:        stc.ID,
+			Name:      stc.Name,
+			Arguments: args,
+		})
+	}
+
+	return &providers.LLMResponse{
+		Content:    contentBuilder.String(),
+		ToolCalls:  toolCalls,
+		Usage:      usage,
+		StopReason: finishReason,
+		Model:      responseModel,
+	}, nil
 }
 
 func (p *Provider) buildRequest(

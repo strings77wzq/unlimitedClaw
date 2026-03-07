@@ -14,6 +14,10 @@
 - **Provider 抽象**：支持多种 LLM 提供商（OpenAI、Anthropic 等）
 - **会话管理**：线程安全的对话状态管理
 - **依赖注入**：清晰的依赖关系和可测试性
+- **流式输出**：支持 OpenAI 和 Anthropic 的 SSE token-by-token 流式响应
+- **中国大模型**：支持 DeepSeek、Kimi、GLM、MiniMax、Qwen 等国内大模型
+- **会话恢复**：通过 `-C` 标志恢复上次对话或指定会话
+- **Token 用量追踪**：内置 25+ 模型定价，实时显示 Token 消耗和成本
 
 ### 与 PicoClaw 的关系
 
@@ -35,6 +39,7 @@ PicoClaw 是一个 Python 实现的 AI 助手框架。unlimitedClaw 借鉴了其
 3. **[工具系统](./03-tool-system.md)** - 学习如何实现和注册工具
 4. **[Provider 系统](./04-provider-system.md)** - 理解 LLM 提供商抽象层
 5. **[消息总线](./05-message-bus.md)** - 掌握组件间通信机制
+6. **[流式输出与中国大模型](./06-streaming-and-providers.md)** - 掌握流式输出和多提供商集成
 
 每个文档都包含：
 - 设计思想和架构决策
@@ -70,6 +75,7 @@ unlimitedClaw/
 │   ├── tools/                    # 工具接口和注册表
 │   ├── providers/                # LLM 提供商抽象
 │   ├── session/                  # 会话管理
+│   ├── usage/                    # Token 用量追踪
 │   ├── channels/                 # I/O 适配器（CLI 等）
 │   ├── config/                   # 配置管理
 │   └── logger/                   # 结构化日志
@@ -147,12 +153,15 @@ graph TD
     G -->|工具开发| H[03-工具系统]
     G -->|LLM 集成| I[04-Provider 系统]
     G -->|消息流转| J[05-消息总线]
+    G -->|流式+扩展| P[06-流式输出与中国大模型]
     H --> K[实践：开发自定义工具]
     I --> L[实践：集成新的 LLM]
     J --> M[实践：添加新的 Channel]
+    P --> Q[实践：集成中国大模型]
     K --> N[深入源码]
     L --> N
     M --> N
+    Q --> N
     N --> O[贡献代码]
 ```
 

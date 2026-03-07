@@ -12,6 +12,8 @@
 - [Mock Provider 用于测试](#mock-provider-用于测试)
 - [添加新 Provider 的步骤](#添加新-provider-的步骤)
 - [Provider 系统架构图](#provider-系统架构图)
+- [StreamingProvider 流式接口](#streamingprovider-流式接口)
+- [中国大模型提供商](#中国大模型提供商)
 
 ## Provider 系统概述
 
@@ -889,6 +891,54 @@ sequenceDiagram
     end
 ```
 
+## StreamingProvider 流式接口
+
+Wave 2 引入了 `StreamingProvider` 可选接口，支持 token-by-token 流式输出：
+
+参见 `pkg/providers/types.go` 第 69-83 行：
+
+```go
+type StreamingProvider interface {
+    LLMProvider
+
+    ChatStream(ctx context.Context, messages []Message, toolDefs []tools.ToolDefinition,
+        model string, opts *ChatOptions, onToken func(token string)) (*LLMResponse, error)
+}
+```
+
+**使用方式**（Go 类型断言）：
+
+```go
+if sp, ok := provider.(providers.StreamingProvider); ok {
+    resp, err := sp.ChatStream(ctx, messages, tools, model, opts, func(token string) {
+        fmt.Print(token) // 逐 token 输出
+    })
+}
+```
+
+OpenAI 和 Anthropic 的 Provider 都实现了此接口。详细实现请参考 [第 06 章：流式输出与中国大模型](./06-streaming-and-providers.md)。
+
+## 中国大模型提供商
+
+Wave 2 新增了 5 个中国大模型提供商，全部使用 OpenAI 兼容 API 格式：
+
+| 提供商 | Vendor | 默认 API Base | 示例模型 |
+|--------|--------|---------------|----------|
+| DeepSeek | `deepseek` | `https://api.deepseek.com` | `deepseek/deepseek-chat` |
+| Kimi (月之暗面) | `moonshot` | `https://api.moonshot.cn` | `moonshot/moonshot-v1-8k` |
+| 智谱 GLM | `zhipu` | `https://open.bigmodel.cn/api/paas` | `zhipu/glm-4` |
+| MiniMax | `minimax` | `https://api.minimax.chat` | `minimax/MiniMax-Text-01` |
+| 通义千问 | `dashscope` | `https://dashscope.aliyuncs.com/compatible-mode` | `dashscope/qwen-plus` |
+
+注册方式（复用 OpenAI Provider）：
+
+```go
+// 以 DeepSeek 为例
+factory.Register("deepseek", openai.New(apiKey, openai.WithAPIBase("https://api.deepseek.com")))
+```
+
+完整说明请参考 [第 06 章：流式输出与中国大模型](./06-streaming-and-providers.md)。
+
 ## 小结
 
 Provider 系统是 unlimitedClaw 与 LLM 交互的抽象层，它隐藏了不同 LLM 服务商的 API 差异。
@@ -901,6 +951,8 @@ Provider 系统是 unlimitedClaw 与 LLM 交互的抽象层，它隐藏了不同
 4. **Vendor 前缀**：显式声明使用哪个 Provider
 5. **可扩展性**：只需实现接口，即可添加新 Provider
 6. **可测试性**：MockProvider 让测试变得简单
+7. **流式输出**：StreamingProvider 可选接口，支持 SSE token-by-token 流式
+8. **中国大模型**：5 个国内大模型全部复用 OpenAI 兼容格式
 
 **实践建议**：
 
@@ -912,4 +964,4 @@ Provider 系统是 unlimitedClaw 与 LLM 交互的抽象层，它隐藏了不同
 
 下一步，我们将学习**消息总线**，了解组件间如何通过 Pub/Sub 模式通信。
 
-👉 [下一章：消息总线](./05-message-bus.md)
+👉 [下一章：消息总线](./05-message-bus.md) | [跳转到：流式输出与中国大模型](./06-streaming-and-providers.md)
