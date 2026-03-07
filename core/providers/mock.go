@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/strings77wzq/unlimitedClaw/core/tools"
+	"github.com/strings77wzq/golem/core/tools"
 )
 
 // MockProvider is a configurable LLM provider for testing.

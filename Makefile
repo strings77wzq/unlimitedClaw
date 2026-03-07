@@ -1,11 +1,11 @@
-# unlimitedClaw Makefile
+# Golem Makefile
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 DATE    ?= $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 
-BINARY  := unlimitedclaw
+BINARY  := golem
 BUILD_DIR := build
-CMD_DIR := ./cmd/unlimitedclaw
+CMD_DIR := ./cmd/golem
 
 LDFLAGS := -s -w \
 	-X main.version=$(VERSION) \

@@ -16,11 +16,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Key bindings: `ctrl+c`/`esc` to quit, `enter` to send, `backspace` to delete
 - 11 unit tests covering model state transitions and command generation
 
-#### First-run Setup Wizard (`unlimitedclaw init`)
+#### First-run Setup Wizard (`golem init`)
 - Interactive `init` command for first-time configuration
 - 7 provider presets: OpenAI, Anthropic, DeepSeek, Moonshot/Kimi, Zhipu/GLM, MiniMax, DashScope/Qwen
 - Prompts for API key, base URL override, and default model selection
-- Writes `~/.unlimitedclaw/config.json` with safe file permissions (0600)
+- Writes `~/.golem/config.json` with safe file permissions (0600)
 - Skips fields left blank (preserves defaults)
 
 #### Streaming Fixes (`core/agent/loop.go`)

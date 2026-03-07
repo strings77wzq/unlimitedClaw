@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: unlimitedclaw-config
-  namespace: unlimitedclaw
+  name: golem-config
+  namespace: golem
 data:
   config.json: |
     {

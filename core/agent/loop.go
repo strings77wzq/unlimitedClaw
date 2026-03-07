@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/strings77wzq/unlimitedClaw/core/bus"
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
-	"github.com/strings77wzq/unlimitedClaw/core/session"
-	"github.com/strings77wzq/unlimitedClaw/core/tools"
+	"github.com/strings77wzq/golem/core/bus"
+	"github.com/strings77wzq/golem/core/providers"
+	"github.com/strings77wzq/golem/core/session"
+	"github.com/strings77wzq/golem/core/tools"
 )
 
 func (a *Agent) handleMessage(ctx context.Context, msg bus.InboundMessage) {

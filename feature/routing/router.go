@@ -9,8 +9,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
-	"github.com/strings77wzq/unlimitedClaw/core/tools"
+	"github.com/strings77wzq/golem/core/providers"
+	"github.com/strings77wzq/golem/core/tools"
 )
 
 // Router routes model requests to providers with fallback support.

@@ -16,7 +16,7 @@ func newStatusCommand() *cobra.Command {
 		Short: "Show system status",
 		Long:  "Display version, configuration, and service health information",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("unlimitedClaw Status\n")
+			fmt.Printf("Golem Status\n")
 			fmt.Printf("====================\n\n")
 
 			fmt.Printf("Version:    %s\n", version)

@@ -1,7 +1,7 @@
 // Package telegram adapts the Telegram Bot API to the agent's [agent.MessageHandler]
 // interface. Incoming Telegram messages are forwarded to the agent; responses
 // are sent back as Telegram messages. This adapter is wired in at the
-// composition root (cmd/unlimitedclaw) when a bot token is configured.
+// composition root (cmd/golem) when a bot token is configured.
 package telegram
 
 import (
@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/strings77wzq/unlimitedClaw/core/bus"
-	"github.com/strings77wzq/unlimitedClaw/foundation/logger"
+	"github.com/strings77wzq/golem/core/bus"
+	"github.com/strings77wzq/golem/foundation/logger"
 )
 
 // AdapterConfig configures the Telegram adapter

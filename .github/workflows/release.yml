@@ -22,7 +22,7 @@ jobs:
           for platform in "${platforms[@]}"; do
             GOOS="${platform%/*}"
             GOARCH="${platform#*/}"
-            output="build/unlimitedclaw-${GOOS}-${GOARCH}"
+            output="build/golem-${GOOS}-${GOARCH}"
             if [ "$GOOS" = "windows" ]; then
               output="${output}.exe"
             fi
@@ -30,7 +30,7 @@ jobs:
             CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" go build \
               -trimpath \
               -ldflags "-s -w -X main.version=${{ github.ref_name }}" \
-              -o "$output" ./cmd/unlimitedclaw
+              -o "$output" ./cmd/golem
           done
           ls -la build/
 
@@ -44,4 +44,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body_path: /tmp/release_notes.md
-          files: build/unlimitedclaw-*
+          files: build/golem-*

@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
+	"github.com/strings77wzq/golem/core/providers"
 )
 
 // Session holds a conversation's state.

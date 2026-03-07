@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
+	"github.com/strings77wzq/golem/core/providers"
 )
 
 func TestMemoryStoreSaveAndGet(t *testing.T) {

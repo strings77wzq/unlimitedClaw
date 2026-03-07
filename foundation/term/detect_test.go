@@ -3,7 +3,7 @@ package term_test
 import (
 	"testing"
 
-	"github.com/strings77wzq/unlimitedClaw/foundation/term"
+	"github.com/strings77wzq/golem/foundation/term"
 )
 
 func TestIsPiped(t *testing.T) {

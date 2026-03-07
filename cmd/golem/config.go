@@ -13,7 +13,7 @@ func newConfigCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config",
 		Short: "Manage configuration",
-		Long:  "Manage unlimitedClaw configuration file",
+		Long:  "Manage Golem configuration file",
 	}
 
 	cmd.AddCommand(
@@ -146,7 +146,7 @@ func getConfigPath(cmd *cobra.Command) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("getting home directory: %w", err)
 		}
-		configPath = filepath.Join(home, ".unlimitedclaw", "config.json")
+		configPath = filepath.Join(home, ".golem", "config.json")
 	}
 	return configPath, nil
 }

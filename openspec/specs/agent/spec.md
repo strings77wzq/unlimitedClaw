@@ -1,7 +1,7 @@
 # Agent Behavior Specification
 
 ## Overview
-The Agent component implements the ReAct (Reasoning + Acting) loop for unlimitedClaw.
+The Agent component implements the ReAct (Reasoning + Acting) loop for Golem.
 
 ## Definitions
 - **Agent**: The core component that orchestrates LLM interactions and tool execution.

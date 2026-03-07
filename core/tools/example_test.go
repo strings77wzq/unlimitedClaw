@@ -3,7 +3,7 @@ package tools_test
 import (
 	"fmt"
 
-	"github.com/strings77wzq/unlimitedClaw/core/tools"
+	"github.com/strings77wzq/golem/core/tools"
 )
 
 func ExampleNewRegistry() {

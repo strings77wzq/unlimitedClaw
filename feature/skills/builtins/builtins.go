@@ -1,10 +1,10 @@
-// Package builtins registers the default skills shipped with unlimitedClaw:
+// Package builtins registers the default skills shipped with Golem:
 // "summarize" condenses long texts into concise summaries, and "code-review"
 // provides structured feedback on Go source code. Call [Register] to add them
 // to a [skills.Registry].
 package builtins
 
-import "github.com/strings77wzq/unlimitedClaw/feature/skills"
+import "github.com/strings77wzq/golem/feature/skills"
 
 const summarizeSystemPrompt = `You are a summarization assistant. Given a piece of text, produce a concise summary that captures the key points. Follow these rules:
 - Keep the summary under 3 paragraphs
@@ -17,7 +17,7 @@ func SummarizeSkill() *skills.Skill {
 		Name:        "summarize",
 		Description: "Summarizes text into concise key points",
 		Version:     "1.0.0",
-		Author:      "unlimitedClaw",
+		Author:      "Golem",
 		Prompts: []skills.Prompt{
 			{
 				Name:    "system",
@@ -32,7 +32,7 @@ func CodeReviewSkill() *skills.Skill {
 		Name:        "code-review",
 		Description: "Reviews code for bugs, style issues, and improvements",
 		Version:     "1.0.0",
-		Author:      "unlimitedClaw",
+		Author:      "Golem",
 		Prompts: []skills.Prompt{
 			{
 				Name:    "system",

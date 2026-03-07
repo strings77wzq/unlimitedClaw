@@ -1,6 +1,6 @@
 # 03 - 工具系统
 
-本文档详细介绍 unlimitedClaw 的工具系统设计，包括 Tool 接口、ToolRegistry、ToolResult 的双通道模式，以及如何实现自定义工具。
+本文档详细介绍 Golem 的工具系统设计，包括 Tool 接口、ToolRegistry、ToolResult 的双通道模式，以及如何实现自定义工具。
 
 ## 目录
 
@@ -511,7 +511,7 @@ import (
     "fmt"
     "math"
     
-    "github.com/strings77wzq/unlimitedClaw/core/tools"
+    "github.com/strings77wzq/Golem/core/tools"
 )
 
 type CalculatorTool struct {
@@ -577,7 +577,7 @@ func (t *CalculatorTool) evaluate(expr string) (float64, error) {
 ### 步骤 3：注册工具
 
 ```go
-// 在 cmd/unlimitedclaw/main.go 中
+// 在 cmd/golem/main.go 中
 func main() {
     // ...
     
@@ -628,7 +628,7 @@ func TestCalculatorTool(t *testing.T) {
 
 ## Mock 工具用于测试
 
-unlimitedClaw 提供了 `MockTool` 用于测试，无需依赖真实的外部服务。
+Golem 提供了 `MockTool` 用于测试，无需依赖真实的外部服务。
 
 参见 `core/tools/mock.go`：
 
@@ -793,7 +793,7 @@ sequenceDiagram
 
 ## 小结
 
-工具系统是 unlimitedClaw 的"手和脚"，让 AI 能够与外部世界交互。
+工具系统是 Golem 的"手和脚"，让 AI 能够与外部世界交互。
 
 **核心要点**：
 

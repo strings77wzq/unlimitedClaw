@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strings77wzq/unlimitedClaw/core/bus"
-	"github.com/strings77wzq/unlimitedClaw/core/config"
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
-	"github.com/strings77wzq/unlimitedClaw/core/session"
-	"github.com/strings77wzq/unlimitedClaw/core/tools"
-	"github.com/strings77wzq/unlimitedClaw/foundation/logger"
+	"github.com/strings77wzq/golem/core/bus"
+	"github.com/strings77wzq/golem/core/config"
+	"github.com/strings77wzq/golem/core/providers"
+	"github.com/strings77wzq/golem/core/session"
+	"github.com/strings77wzq/golem/core/tools"
+	"github.com/strings77wzq/golem/foundation/logger"
 )
 
 func setupTestAgent(t *testing.T) (*Agent, bus.Bus, *providers.MockProvider, *tools.Registry) {

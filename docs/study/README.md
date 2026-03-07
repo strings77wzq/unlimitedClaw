@@ -1,10 +1,10 @@
-# unlimitedClaw 学习指南
+# Golem 学习指南
 
-欢迎来到 unlimitedClaw 项目学习指南！本指南旨在帮助中级 Go 开发者深入理解 AI 助手的架构设计和实现细节。
+欢迎来到 Golem 项目学习指南！本指南旨在帮助中级 Go 开发者深入理解 AI 助手的架构设计和实现细节。
 
 ## 项目概述
 
-**unlimitedClaw** 是一个使用 Go 语言编写的 AI 助手项目，设计灵感来自于 PicoClaw (sipeed/picoclaw)。该项目采用六边形架构（Hexagonal Architecture）和依赖注入模式，展示了如何构建一个模块化、可测试、易于扩展的 AI 助手系统。
+**Golem** 是一个使用 Go 语言编写的 AI 助手项目，设计灵感来自于 PicoClaw (sipeed/picoclaw)。该项目采用六边形架构（Hexagonal Architecture）和依赖注入模式，展示了如何构建一个模块化、可测试、易于扩展的 AI 助手系统。
 
 ### 核心特性
 
@@ -21,7 +21,7 @@
 
 ### 与 PicoClaw 的关系
 
-PicoClaw 是一个 Python 实现的 AI 助手框架。unlimitedClaw 借鉴了其核心设计思想，但使用 Go 语言重新实现，并在架构上做了以下改进：
+PicoClaw 是一个 Python 实现的 AI 助手框架。Golem 借鉴了其核心设计思想，但使用 Go 语言重新实现，并在架构上做了以下改进：
 
 - 采用更严格的接口设计和类型系统
 - 使用消息总线实现组件解耦
@@ -67,9 +67,9 @@ PicoClaw 是一个 Python 实现的 AI 助手框架。unlimitedClaw 借鉴了其
 ## 项目结构
 
 ```
-unlimitedClaw/
+Golem/
 ├── cmd/                          # 应用程序入口点（composition root）
-│   └── unlimitedclaw/            # CLI 主程序
+│   └── golem/            # CLI 主程序
 ├── core/                         # 核心领域逻辑
 │   ├── agent/                    # ReAct 循环核心逻辑
 │   ├── bus/                      # 消息总线（Pub/Sub）
@@ -131,8 +131,8 @@ ReAct = **Rea**son + A**ct**，是一种让 AI 能够交替进行推理和行动
 ### 构建项目
 
 ```bash
-cd /home/strin/go/src/devLearn/aiLab/goclaw/unlimitedClaw
-go build -o build/unlimitedclaw ./cmd/unlimitedclaw
+cd /home/strin/go/src/devLearn/aiLab/goclaw/Golem
+go build -o build/golem ./cmd/golem
 ```
 
 ### 运行测试
@@ -149,8 +149,8 @@ go test ./core/tools/
 ### 查看帮助
 
 ```bash
-./build/unlimitedclaw --help
-./build/unlimitedclaw agent --help
+./build/golem --help
+./build/golem agent --help
 ```
 
 ## 学习路径图

@@ -1,6 +1,6 @@
-// Package config defines the configuration schema for unlimitedClaw and
+// Package config defines the configuration schema for Golem and
 // provides helpers to load, validate, and access it. Configuration is stored
-// as JSON at ~/.unlimitedclaw/config.json and supports hot reload via SIGHUP.
+// as JSON at ~/.golem/config.json and supports hot reload via SIGHUP.
 package config
 
 import (

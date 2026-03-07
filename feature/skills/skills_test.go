@@ -139,7 +139,7 @@ func TestLoadSkill(t *testing.T) {
 		"name":        "code-review",
 		"description": "Reviews code for common issues",
 		"version":     "1.0.0",
-		"author":      "unlimitedclaw",
+		"author":      "golem",
 		"prompts": []map[string]string{
 			{"name": "system", "file": "system.md"},
 		},
@@ -167,8 +167,8 @@ func TestLoadSkill(t *testing.T) {
 	if skill.Version != "1.0.0" {
 		t.Errorf("expected version '1.0.0', got %q", skill.Version)
 	}
-	if skill.Author != "unlimitedclaw" {
-		t.Errorf("expected author 'unlimitedclaw', got %q", skill.Author)
+	if skill.Author != "golem" {
+		t.Errorf("expected author 'golem', got %q", skill.Author)
 	}
 	if len(skill.Tools) != 2 {
 		t.Fatalf("expected 2 tools, got %d", len(skill.Tools))

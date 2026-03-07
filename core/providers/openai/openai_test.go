@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
-	"github.com/strings77wzq/unlimitedClaw/core/tools"
+	"github.com/strings77wzq/golem/core/providers"
+	"github.com/strings77wzq/golem/core/tools"
 )
 
 func TestChatCompletion(t *testing.T) {

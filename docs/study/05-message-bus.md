@@ -1,6 +1,6 @@
 # 05 - 消息总线
 
-本文档详细介绍 unlimitedClaw 的消息总线（Message Bus）设计，包括 Pub/Sub 模式、Bus 接口、线程安全设计、非阻塞发布机制，以及消息流转的完整过程。
+本文档详细介绍 Golem 的消息总线（Message Bus）设计，包括 Pub/Sub 模式、Bus 接口、线程安全设计、非阻塞发布机制，以及消息流转的完整过程。
 
 ## 目录
 
@@ -16,7 +16,7 @@
 
 ## 消息总线概述
 
-**消息总线（Message Bus）** 是 unlimitedClaw 的通信中枢，采用 **Pub/Sub（发布/订阅）** 模式，实现组件间的松耦合通信。
+**消息总线（Message Bus）** 是 Golem 的通信中枢，采用 **Pub/Sub（发布/订阅）** 模式，实现组件间的松耦合通信。
 
 ### 为什么需要消息总线？
 
@@ -105,7 +105,7 @@ core/bus/
 | **扩展性** | 需要修改调用者 | 只需添加订阅者 |
 | **灵活性** | 编译时确定 | 运行时动态 |
 
-### unlimitedClaw 中的主题
+### Golem 中的主题
 
 | 主题 | 发布者 | 订阅者 | 用途 |
 |------|--------|--------|------|
@@ -544,7 +544,7 @@ for _, ch := range subs {
 | **性能** | 受慢订阅者影响 | 不受慢订阅者影响 |
 | **复杂性** | 简单 | 需要考虑丢消息场景 |
 
-**unlimitedClaw 的选择**：非阻塞发布
+**Golem 的选择**：非阻塞发布
 
 **原因**：
 1. **性能优先**：不能让慢订阅者影响整个系统
@@ -644,7 +644,7 @@ bus.Close()
 ```go
 package cli
 
-import "github.com/strings77wzq/unlimitedClaw/core/agent"
+import "github.com/strings77wzq/Golem/core/agent"
 
 type CLI struct {
     agent *agent.Agent  // 直接依赖 Agent
@@ -667,7 +667,7 @@ func (c *CLI) ReadInput() {
 ```go
 package cli
 
-import "github.com/strings77wzq/unlimitedClaw/core/bus"
+import "github.com/strings77wzq/Golem/core/bus"
 
 type CLI struct {
     bus bus.Bus  // 只依赖 Bus 接口
@@ -705,7 +705,7 @@ func (c *CLI) Start() {
 ```go
 package http
 
-import "github.com/strings77wzq/unlimitedClaw/core/bus"
+import "github.com/strings77wzq/Golem/core/bus"
 
 type Server struct {
     bus bus.Bus
@@ -820,7 +820,7 @@ sequenceDiagram
 
 ## 小结
 
-消息总线是 unlimitedClaw 的通信中枢，实现了组件间的松耦合通信。
+消息总线是 Golem 的通信中枢，实现了组件间的松耦合通信。
 
 **核心要点**：
 
@@ -849,7 +849,7 @@ sequenceDiagram
 
 ---
 
-**恭喜！** 您已完成 unlimitedClaw 学习指南的全部 5 章内容。
+**恭喜！** 您已完成 Golem 学习指南的全部 5 章内容。
 
 ## 下一步
 

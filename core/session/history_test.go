@@ -3,7 +3,7 @@ package session
 import (
 	"testing"
 
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
+	"github.com/strings77wzq/golem/core/providers"
 )
 
 func TestGetContextWindowAllFit(t *testing.T) {

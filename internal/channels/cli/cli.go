@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/strings77wzq/unlimitedClaw/core/bus"
+	"github.com/strings77wzq/golem/core/bus"
 )
 
 const (

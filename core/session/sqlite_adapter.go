@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
-	"github.com/strings77wzq/unlimitedClaw/foundation/store"
+	"github.com/strings77wzq/golem/core/providers"
+	"github.com/strings77wzq/golem/foundation/store"
 )
 
 // SQLiteAdapter bridges store.SQLiteStore to the SessionStore interface,

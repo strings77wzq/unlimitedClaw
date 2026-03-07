@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: unlimitedclaw-gateway
-  namespace: unlimitedclaw
+  name: golem-gateway
+  namespace: golem
   labels:
-    app: unlimitedclaw
+    app: golem
     component: gateway
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: unlimitedclaw
+      app: golem
       component: gateway
   template:
     metadata:
       labels:
-        app: unlimitedclaw
+        app: golem
         component: gateway
     spec:
       containers:
         - name: gateway
-          image: unlimitedclaw:latest
+          image: golem:latest
           ports:
             - containerPort: 18790
               protocol: TCP
@@ -28,7 +28,7 @@ spec:
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: unlimitedclaw-secrets
+                  name: golem-secrets
                   key: openai-api-key
                   optional: true
           resources:
@@ -57,4 +57,4 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: unlimitedclaw-config
+            name: golem-config

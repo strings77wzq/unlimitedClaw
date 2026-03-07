@@ -1,6 +1,6 @@
 # 01 - 架构总览
 
-本文档介绍 unlimitedClaw 的整体架构设计，帮助您建立全局视角，理解各个组件之间的关系和职责划分。
+本文档介绍 Golem 的整体架构设计，帮助您建立全局视角，理解各个组件之间的关系和职责划分。
 
 ## 目录
 
@@ -13,7 +13,7 @@
 
 ## 六边形架构原理
 
-unlimitedClaw 采用**六边形架构**（Hexagonal Architecture），也称为**端口和适配器架构**（Ports and Adapters）。这是一种将业务逻辑与外部依赖隔离的架构模式。
+Golem 采用**六边形架构**（Hexagonal Architecture），也称为**端口和适配器架构**（Ports and Adapters）。这是一种将业务逻辑与外部依赖隔离的架构模式。
 
 ### 核心思想
 
@@ -32,7 +32,7 @@ unlimitedClaw 采用**六边形架构**（Hexagonal Architecture），也称为*
 3. **关注点分离**：业务逻辑与技术细节解耦
 4. **延迟决策**：可以推迟技术选型决策，先专注核心逻辑
 
-### 在 unlimitedClaw 中的体现
+### 在 Golem 中的体现
 
 | 层次 | 组件 | 说明 |
 |------|------|------|
@@ -48,9 +48,9 @@ unlimitedClaw 采用**六边形架构**（Hexagonal Architecture），也称为*
 ## 项目目录结构
 
 ```
-unlimitedClaw/
+Golem/
 ├── cmd/
-│   └── unlimitedclaw/        # 组合根（Composition Root）
+│   └── golem/        # 组合根（Composition Root）
 │       └── main.go           # 应用程序入口，组装所有依赖
 │
 ├── core/                     # 核心领域逻辑
@@ -120,7 +120,7 @@ unlimitedClaw/
 
 ## 核心包职责
 
-### 1. `cmd/unlimitedclaw/` - 组合根
+### 1. `cmd/golem/` - 组合根
 
 **职责**：应用程序入口点，负责组装所有依赖并启动系统。
 
@@ -324,7 +324,7 @@ type Session struct {
 
 ## 依赖注入模式
 
-unlimitedClaw 使用**构造函数注入**模式，所有依赖在创建对象时传入。
+Golem 使用**构造函数注入**模式，所有依赖在创建对象时传入。
 
 ### 示例：Agent 的创建
 
@@ -389,7 +389,7 @@ func TestAgent(t *testing.T) {
 
 ## 与 PicoClaw 的架构对比
 
-| 方面 | PicoClaw (Python) | unlimitedClaw (Go) |
+| 方面 | PicoClaw (Python) | Golem (Go) |
 |------|-------------------|---------------------|
 | **语言** | Python | Go |
 | **架构风格** | 模块化 | 六边形架构 |
@@ -405,11 +405,11 @@ func TestAgent(t *testing.T) {
 
 1. **消息总线解耦**：
    - PicoClaw：CLI → Agent（直接调用）
-   - unlimitedClaw：CLI → Bus → Agent（通过消息）
+   - Golem：CLI → Bus → Agent（通过消息）
    - 优势：可以轻松添加新的输入输出通道（HTTP、WebSocket）
 
 2. **工具顺序优化**：
-   - unlimitedClaw 按字母顺序返回工具，利用 LLM 的 KV 缓存
+   - Golem 按字母顺序返回工具，利用 LLM 的 KV 缓存
    - 参见 `core/tools/registry.go` 第 47-50 行的注释
 
 3. **Provider 工厂**：
@@ -516,7 +516,7 @@ graph TB
 
 ## 小结
 
-unlimitedClaw 的架构设计遵循以下原则：
+Golem 的架构设计遵循以下原则：
 
 1. **依赖倒置**：核心逻辑依赖抽象（接口），不依赖具体实现
 2. **关注点分离**：每个包职责单一，边界清晰

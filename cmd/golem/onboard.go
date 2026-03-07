@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/strings77wzq/unlimitedClaw/core/config"
+	"github.com/strings77wzq/golem/core/config"
 )
 
 type providerPreset struct {
@@ -31,7 +31,7 @@ var providerPresets = []providerPreset{
 func newInitCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
-		Short: "Configure unlimitedClaw for first use",
+		Short: "Configure Golem for first use",
 		Long:  "Interactive setup wizard: choose a provider, set your API key, and write config",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			configPath, err := getConfigPath(cmd)
@@ -56,7 +56,7 @@ func runOnboardWizard(configPath string) error {
 		}
 	}
 
-	fmt.Println("=== unlimitedClaw setup ===")
+	fmt.Println("=== Golem setup ===")
 	fmt.Println("Choose a provider:")
 	for i, p := range providerPresets {
 		fmt.Printf("  %d. %s\n", i+1, p.label)
@@ -126,7 +126,7 @@ func runOnboardWizard(configPath string) error {
 	}
 
 	fmt.Printf("\nConfig written to %s\n", configPath)
-	fmt.Printf("Run: unlimitedclaw agent\n")
+	fmt.Printf("Run: golem agent\n")
 	return nil
 }
 

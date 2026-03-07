@@ -3,7 +3,7 @@ package config_test
 import (
 	"fmt"
 
-	"github.com/strings77wzq/unlimitedClaw/core/config"
+	"github.com/strings77wzq/golem/core/config"
 )
 
 func ExampleDefaultConfig() {

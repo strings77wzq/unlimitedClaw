@@ -1,6 +1,6 @@
 # 04 - Provider 系统
 
-本文档详细介绍 unlimitedClaw 的 Provider 系统设计，包括 LLMProvider 接口、Message 和 ToolCall 类型、Factory 工厂模式，以及如何集成新的 LLM 提供商。
+本文档详细介绍 Golem 的 Provider 系统设计，包括 LLMProvider 接口、Message 和 ToolCall 类型、Factory 工厂模式，以及如何集成新的 LLM 提供商。
 
 ## 目录
 
@@ -17,7 +17,7 @@
 
 ## Provider 系统概述
 
-**Provider 系统** 是 unlimitedClaw 与 LLM 交互的抽象层，它隐藏了不同 LLM 服务商（OpenAI、Anthropic、Google 等）的 API 差异，提供统一的调用接口。
+**Provider 系统** 是 Golem 与 LLM 交互的抽象层，它隐藏了不同 LLM 服务商（OpenAI、Anthropic、Google 等）的 API 差异，提供统一的调用接口。
 
 ### 为什么需要 Provider 抽象？
 
@@ -457,7 +457,7 @@ response, err := provider.Chat(ctx, messages, toolDefs, modelName, opts)
 
 ### 模型名称格式
 
-unlimitedClaw 使用 `vendor/model` 格式：
+Golem 使用 `vendor/model` 格式：
 
 ```
 openai/gpt-4
@@ -508,7 +508,7 @@ factory.GetProvider("openai")
 
 ## Mock Provider 用于测试
 
-unlimitedClaw 提供了 `MockProvider` 用于测试，无需调用真实的 LLM API。
+Golem 提供了 `MockProvider` 用于测试，无需调用真实的 LLM API。
 
 参见 `core/providers/mock.go`：
 
@@ -619,8 +619,8 @@ import (
     "context"
     "fmt"
     
-    "github.com/strings77wzq/unlimitedClaw/core/providers"
-    "github.com/strings77wzq/unlimitedClaw/core/tools"
+    "github.com/strings77wzq/Golem/core/providers"
+    "github.com/strings77wzq/Golem/core/tools"
 )
 
 type Provider struct {
@@ -712,11 +712,11 @@ func (p *Provider) convertResponse(resp *AnthropicResponse) *providers.LLMRespon
 ### 步骤 4：注册 Provider
 
 ```go
-// cmd/unlimitedclaw/main.go
+// cmd/golem/main.go
 
 import (
-    "github.com/strings77wzq/unlimitedClaw/core/providers"
-    "github.com/strings77wzq/unlimitedClaw/core/providers/anthropic"
+    "github.com/strings77wzq/Golem/core/providers"
+    "github.com/strings77wzq/Golem/core/providers/anthropic"
 )
 
 func main() {
@@ -941,7 +941,7 @@ factory.Register("deepseek", openai.New(apiKey, openai.WithAPIBase("https://api.
 
 ## 小结
 
-Provider 系统是 unlimitedClaw 与 LLM 交互的抽象层，它隐藏了不同 LLM 服务商的 API 差异。
+Provider 系统是 Golem 与 LLM 交互的抽象层，它隐藏了不同 LLM 服务商的 API 差异。
 
 **核心要点**：
 

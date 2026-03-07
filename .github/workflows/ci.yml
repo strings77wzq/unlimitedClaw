@@ -42,12 +42,12 @@ jobs:
         with:
           go-version: '1.25'
       - name: Build
-        run: CGO_ENABLED=0 go build -ldflags "-s -w" -o build/unlimitedclaw ./cmd/unlimitedclaw
+        run: CGO_ENABLED=0 go build -ldflags "-s -w" -o build/golem ./cmd/golem
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: unlimitedclaw-linux-amd64
-          path: build/unlimitedclaw
+          name: golem-linux-amd64
+          path: build/golem
 
   docker:
     runs-on: ubuntu-latest
@@ -55,6 +55,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
-        run: docker build -f docker/Dockerfile -t unlimitedclaw:ci .
+        run: docker build -f docker/Dockerfile -t golem:ci .
       - name: Test Docker image
-        run: docker run --rm unlimitedclaw:ci version
+        run: docker run --rm golem:ci version

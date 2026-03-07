@@ -8,7 +8,7 @@ package providers
 import (
 	"context"
 
-	"github.com/strings77wzq/unlimitedClaw/core/tools"
+	"github.com/strings77wzq/golem/core/tools"
 )
 
 // Role represents the message sender role.

@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
-	"github.com/strings77wzq/unlimitedClaw/core/session"
+	"github.com/strings77wzq/golem/core/providers"
+	"github.com/strings77wzq/golem/core/session"
 )
 
 func TestSQLiteAdapter_SaveAndGet(t *testing.T) {

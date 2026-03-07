@@ -7,7 +7,7 @@ func DefaultConfig() *Config {
 			Defaults: AgentDefaults{
 				ModelName:    "mock",
 				MaxTokens:    4096,
-				SystemPrompt: "You are unlimitedClaw, a helpful AI assistant.",
+				SystemPrompt: "You are Golem, a helpful AI assistant.",
 			},
 		},
 		ModelList: []ModelEntry{

@@ -3,7 +3,7 @@ package skills_test
 import (
 	"fmt"
 
-	"github.com/strings77wzq/unlimitedClaw/feature/skills"
+	"github.com/strings77wzq/golem/feature/skills"
 )
 
 func ExampleNewRegistry() {

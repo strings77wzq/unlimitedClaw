@@ -3,7 +3,7 @@ package builtins
 import (
 	"testing"
 
-	"github.com/strings77wzq/unlimitedClaw/feature/skills"
+	"github.com/strings77wzq/golem/feature/skills"
 )
 
 func TestSummarizeSkill(t *testing.T) {
@@ -54,8 +54,8 @@ func TestRegisterAll(t *testing.T) {
 	if !ok {
 		t.Fatal("code-review skill not found")
 	}
-	if s.Author != "unlimitedClaw" {
-		t.Errorf("expected author 'unlimitedClaw', got %q", s.Author)
+	if s.Author != "Golem" {
+		t.Errorf("expected author 'Golem', got %q", s.Author)
 	}
 }
 

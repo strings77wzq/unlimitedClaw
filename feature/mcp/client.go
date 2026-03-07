@@ -2,7 +2,7 @@
 // communicates with an external MCP server over stdin/stdout JSON-RPC.
 // This is a reference implementation in the feature/ layer — it is complete
 // and tested but NOT wired into the running binary by default. Wire it in
-// via cmd/unlimitedclaw/main.go if you need external MCP tool integration.
+// via cmd/golem/main.go if you need external MCP tool integration.
 package mcp
 
 import (
@@ -14,7 +14,7 @@ import (
 
 const (
 	protocolVersion = "2024-11-05"
-	clientName      = "unlimitedclaw"
+	clientName      = "golem"
 	clientVersion   = "0.1.0"
 )
 

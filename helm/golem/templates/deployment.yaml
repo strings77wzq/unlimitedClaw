@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "unlimitedclaw.fullname" . }}-gateway
+  name: {{ include "golem.fullname" . }}-gateway
   labels:
-    {{- include "unlimitedclaw.labels" . | nindent 4 }}
+    {{- include "golem.labels" . | nindent 4 }}
     component: gateway
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "unlimitedclaw.selectorLabels" . | nindent 6 }}
+      {{- include "golem.selectorLabels" . | nindent 6 }}
       component: gateway
   template:
     metadata:
       labels:
-        {{- include "unlimitedclaw.selectorLabels" . | nindent 8 }}
+        {{- include "golem.selectorLabels" . | nindent 8 }}
         component: gateway
     spec:
       containers:
@@ -28,7 +28,7 @@ spec:
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "unlimitedclaw.fullname" . }}-secrets
+                  name: {{ include "golem.fullname" . }}-secrets
                   key: openai-api-key
                   optional: true
           resources:
@@ -56,4 +56,4 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: {{ include "unlimitedclaw.fullname" . }}-config
+            name: {{ include "golem.fullname" . }}-config

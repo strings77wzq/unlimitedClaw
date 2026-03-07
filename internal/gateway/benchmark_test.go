@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/strings77wzq/unlimitedClaw/foundation/logger"
+	"github.com/strings77wzq/golem/foundation/logger"
 )
 
 // benchAgentHandler is a minimal mock for benchmark tests

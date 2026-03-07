@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-// Logger defines the logging interface for unlimitedClaw
+// Logger defines the logging interface for Golem
 type Logger interface {
 	Debug(msg string, args ...any)
 	Info(msg string, args ...any)

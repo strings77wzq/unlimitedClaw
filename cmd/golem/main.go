@@ -1,4 +1,4 @@
-// unlimitedClaw - Progressive Go AI Assistant
+// Golem - Progressive Go AI Assistant
 // Learning by building, inspired by PicoClaw
 // License: MIT
 
@@ -18,21 +18,21 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"github.com/strings77wzq/unlimitedClaw/core/agent"
-	"github.com/strings77wzq/unlimitedClaw/core/bus"
-	"github.com/strings77wzq/unlimitedClaw/core/config"
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
-	"github.com/strings77wzq/unlimitedClaw/core/providers/anthropic"
-	"github.com/strings77wzq/unlimitedClaw/core/providers/openai"
-	"github.com/strings77wzq/unlimitedClaw/core/session"
-	"github.com/strings77wzq/unlimitedClaw/core/tools"
-	toolexec "github.com/strings77wzq/unlimitedClaw/core/tools/exec"
-	"github.com/strings77wzq/unlimitedClaw/core/tools/fileops"
-	"github.com/strings77wzq/unlimitedClaw/core/tools/websearch"
-	"github.com/strings77wzq/unlimitedClaw/foundation/logger"
-	"github.com/strings77wzq/unlimitedClaw/foundation/term"
-	"github.com/strings77wzq/unlimitedClaw/internal/channels/tui"
-	"github.com/strings77wzq/unlimitedClaw/internal/gateway"
+	"github.com/strings77wzq/golem/core/agent"
+	"github.com/strings77wzq/golem/core/bus"
+	"github.com/strings77wzq/golem/core/config"
+	"github.com/strings77wzq/golem/core/providers"
+	"github.com/strings77wzq/golem/core/providers/anthropic"
+	"github.com/strings77wzq/golem/core/providers/openai"
+	"github.com/strings77wzq/golem/core/session"
+	"github.com/strings77wzq/golem/core/tools"
+	toolexec "github.com/strings77wzq/golem/core/tools/exec"
+	"github.com/strings77wzq/golem/core/tools/fileops"
+	"github.com/strings77wzq/golem/core/tools/websearch"
+	"github.com/strings77wzq/golem/foundation/logger"
+	"github.com/strings77wzq/golem/foundation/term"
+	"github.com/strings77wzq/golem/internal/channels/tui"
+	"github.com/strings77wzq/golem/internal/gateway"
 )
 
 // Version info injected at build time via ldflags
@@ -44,15 +44,15 @@ var (
 
 func NewRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "unlimitedclaw",
-		Short: "unlimitedClaw - Progressive AI Assistant",
+		Use:   "golem",
+		Short: "Golem - Progressive AI Assistant",
 		Long:  "A progressive Go AI assistant — learning by building, inspired by PicoClaw",
-		Example: `  unlimitedclaw agent
-  unlimitedclaw gateway
-  unlimitedclaw version`,
+		Example: `  golem agent
+  golem gateway
+  golem version`,
 	}
 
-	cmd.PersistentFlags().StringP("config", "c", "", "config file path (default: ~/.unlimitedclaw/config.json)")
+	cmd.PersistentFlags().StringP("config", "c", "", "config file path (default: ~/.golem/config.json)")
 
 	cmd.AddCommand(
 		newVersionCommand(),
@@ -72,7 +72,7 @@ func newVersionCommand() *cobra.Command {
 		Use:   "version",
 		Short: "Print version information",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("unlimitedclaw version %s\n", version)
+			fmt.Printf("golem version %s\n", version)
 			fmt.Printf("commit: %s\n", commit)
 			fmt.Printf("date: %s\n", date)
 			return nil
@@ -84,7 +84,7 @@ func newAgentCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "agent",
 		Short: "Start the AI agent",
-		Long:  "Start the unlimitedClaw AI agent process",
+		Long:  "Start the Golem AI agent process",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			message, _ := cmd.Flags().GetString("message")
 			modelFlag, _ := cmd.Flags().GetString("model")

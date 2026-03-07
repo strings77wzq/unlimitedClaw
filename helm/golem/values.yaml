@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: unlimitedclaw
+  repository: golem
   pullPolicy: IfNotPresent
   tag: "latest"
 
@@ -19,7 +19,7 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
   hosts:
-    - host: unlimitedclaw.local
+    - host: golem.local
       paths:
         - path: /
           pathType: Prefix

@@ -2,9 +2,9 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "unlimitedclaw.fullname" . }}-gateway
+  name: {{ include "golem.fullname" . }}-gateway
   labels:
-    {{- include "unlimitedclaw.labels" . | nindent 4 }}
+    {{- include "golem.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -33,7 +33,7 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name: {{ include "unlimitedclaw.fullname" $ }}-gateway
+                name: {{ include "golem.fullname" $ }}-gateway
                 port:
                   number: {{ $.Values.service.port }}
           {{- end }}

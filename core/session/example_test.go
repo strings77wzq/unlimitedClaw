@@ -3,8 +3,8 @@ package session_test
 import (
 	"fmt"
 
-	"github.com/strings77wzq/unlimitedClaw/core/providers"
-	"github.com/strings77wzq/unlimitedClaw/core/session"
+	"github.com/strings77wzq/golem/core/providers"
+	"github.com/strings77wzq/golem/core/session"
 )
 
 func ExampleNewSession() {

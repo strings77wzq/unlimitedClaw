@@ -3,7 +3,7 @@
     "defaults": {
       "model_name": "gpt4",
       "max_tokens": 8192,
-      "system_prompt": "You are unlimitedClaw, a helpful AI assistant."
+      "system_prompt": "You are Golem, a helpful AI assistant."
     }
   },
   "model_list": [

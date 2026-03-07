@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strings77wzq/unlimitedClaw/core/bus"
-	"github.com/strings77wzq/unlimitedClaw/foundation/logger"
+	"github.com/strings77wzq/golem/core/bus"
+	"github.com/strings77wzq/golem/foundation/logger"
 )
 
 func TestGetUpdates(t *testing.T) {

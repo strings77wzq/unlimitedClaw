@@ -1,13 +1,13 @@
-# unlimitedClaw
+# Golem
 
-[![CI](https://github.com/strings77wzq/unlimitedClaw/actions/workflows/ci.yml/badge.svg)](https://github.com/strings77wzq/unlimitedClaw/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/strings77wzq/unlimitedClaw)](https://goreportcard.com/report/github.com/strings77wzq/unlimitedClaw)
+[![CI](https://github.com/strings77wzq/Golem/actions/workflows/ci.yml/badge.svg)](https://github.com/strings77wzq/Golem/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/strings77wzq/Golem)](https://goreportcard.com/report/github.com/strings77wzq/Golem)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Version](https://img.shields.io/badge/Go-1.25+-blue.svg)](https://go.dev/)
 
 A lightweight, cloud-native AI assistant built with pure Go — inspired by [PicoClaw](https://github.com/sipeed/picoclaw).
 
-unlimitedClaw is a progressive learning project that implements a full AI agent system from scratch, covering Agent core, Tool system, LLM integration, MCP protocol, RAG pipeline, and cloud-native deployment.
+Golem is a progressive learning project that implements a full AI agent system from scratch, covering Agent core, Tool system, LLM integration, MCP protocol, RAG pipeline, and cloud-native deployment.
 
 ## Features
 
@@ -19,7 +19,7 @@ unlimitedClaw is a progressive learning project that implements a full AI agent 
 - **Skills System** — Composable skill registry with built-in skills (summarize, code-review)
 - **Long-term Memory** — Persistent memory with importance scoring and exponential decay
 - **Multiple Channels** — CLI, interactive TUI (Bubble Tea, auto-detected on TTY), HTTP Gateway (with SSE streaming), and Telegram bot adapters
-- **First-run Wizard** — `unlimitedclaw init` interactive setup with 7 provider presets
+- **First-run Wizard** — `golem init` interactive setup with 7 provider presets
 - **Message Bus** — Async pub/sub event system for decoupled communication
 - **Session Management** — Conversation history with SQLite persistence
 - **Security** — Auth middleware, rate limiting, and command sandboxing
@@ -62,23 +62,23 @@ unlimitedClaw is a progressive learning project that implements a full AI agent 
 ### From Source (go install)
 
 ```bash
-go install github.com/strings77wzq/unlimitedClaw/cmd/unlimitedclaw@latest
+go install github.com/strings77wzq/Golem/cmd/golem@latest
 ```
 
-This installs the `unlimitedclaw` binary to your `$GOPATH/bin` (or `$HOME/go/bin`). Make sure it's in your `PATH`.
+This installs the `golem` binary to your `$GOPATH/bin` (or `$HOME/go/bin`). Make sure it's in your `PATH`.
 
 ### From Release Binaries
 
-Download pre-built binaries from the [Releases](https://github.com/strings77wzq/unlimitedClaw/releases) page. Available for Linux, macOS, and Windows (amd64/arm64).
+Download pre-built binaries from the [Releases](https://github.com/strings77wzq/Golem/releases) page. Available for Linux, macOS, and Windows (amd64/arm64).
 
 ### Build from Source
 
 ```bash
-git clone https://github.com/strings77wzq/unlimitedClaw.git
-cd unlimitedClaw
+git clone https://github.com/strings77wzq/Golem.git
+cd Golem
 
 # Build binary (pure Go, no CGO)
-CGO_ENABLED=0 go build -ldflags "-s -w" -o build/unlimitedclaw ./cmd/unlimitedclaw
+CGO_ENABLED=0 go build -ldflags "-s -w" -o build/golem ./cmd/golem
 
 # Or use Makefile
 make build
@@ -86,28 +86,28 @@ make build
 
 ### On Android/Termux (ARM64)
 
-unlimitedClaw builds and runs natively on Android via [Termux](https://termux.dev/) — no root required.
+Golem builds and runs natively on Android via [Termux](https://termux.dev/) — no root required.
 
 ```bash
 # Install Go in Termux
 pkg install golang
 
 # Install directly via go install
-go install github.com/strings77wzq/unlimitedClaw/cmd/unlimitedclaw@latest
-# Binary lands at $HOME/go/bin/unlimitedclaw
+go install github.com/strings77wzq/Golem/cmd/golem@latest
+# Binary lands at $HOME/go/bin/golem
 
 # Or build from source
-git clone https://github.com/strings77wzq/unlimitedClaw.git
-cd unlimitedClaw
+git clone https://github.com/strings77wzq/Golem.git
+cd Golem
 CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath \
-    -o ~/bin/unlimitedclaw ./cmd/unlimitedclaw
+    -o ~/bin/golem ./cmd/golem
 ```
 
 > **Termux notes:**
 > - The TUI auto-activates when stdin is a TTY (standard Termux terminal); pipe/redirect falls back to plain output automatically.
 > - Mouse input is disabled by default — compatible with all Termux terminal emulators and Android keyboards.
 > - Alt+key shortcuts are not used; all keybindings work with standard terminal key sequences.
-> - Use `unlimitedclaw init` for the first-run setup wizard to configure your API key.
+> - Use `golem init` for the first-run setup wizard to configure your API key.
 
 ## Quick Start
 
@@ -120,68 +120,68 @@ CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath \
 
 ```bash
 # Interactive setup wizard — configures provider, API key, and default model
-unlimitedclaw init
+golem init
 ```
 
-The wizard supports 7 provider presets: OpenAI, Anthropic, DeepSeek, Moonshot/Kimi, Zhipu/GLM, MiniMax, and DashScope/Qwen. It writes to `~/.unlimitedclaw/config.json`.
+The wizard supports 7 provider presets: OpenAI, Anthropic, DeepSeek, Moonshot/Kimi, Zhipu/GLM, MiniMax, and DashScope/Qwen. It writes to `~/.golem/config.json`.
 
 ### Usage
 
 ```bash
 # Show help
-unlimitedclaw --help
+golem --help
 
 # Print version
-unlimitedclaw version
+golem version
 
 # Start agent (auto-detects TTY → opens Bubble Tea TUI; pipe/redirect → plain output)
-unlimitedclaw agent
+golem agent
 
 # Start agent with an initial message (one-shot, no TUI)
-unlimitedclaw agent -m "Hello, what can you do?"
+golem agent -m "Hello, what can you do?"
 
 # Force plain interactive mode (no TUI)
-unlimitedclaw agent --no-tui
+golem agent --no-tui
 
 # Start HTTP gateway (port 18790)
-unlimitedclaw gateway
+golem gateway
 
 # Use a specific model
-unlimitedclaw agent -M deepseek/deepseek-chat -m "Hello"
+golem agent -M deepseek/deepseek-chat -m "Hello"
 
 # Resume last session
-unlimitedclaw agent -C last
+golem agent -C last
 
 # Resume specific session
-unlimitedclaw agent -C <session-id>
+golem agent -C <session-id>
 
 # Pipe input from another command
-echo "Summarize this" | unlimitedclaw agent
+echo "Summarize this" | golem agent
 ```
 
 ### Configuration Management
 
-unlimitedClaw stores config at `~/.unlimitedclaw/config.json`. Manage it via CLI:
+Golem stores config at `~/.golem/config.json`. Manage it via CLI:
 
 ```bash
 # Set a config value
-unlimitedclaw config set default_model openai/gpt-4
+golem config set default_model openai/gpt-4
 
 # Get a config value
-unlimitedclaw config get default_model
+golem config get default_model
 
 # List all config values
-unlimitedclaw config list
+golem config list
 
 # Use a custom config file
-unlimitedclaw --config /path/to/config.json agent -m "hello"
+golem --config /path/to/config.json agent -m "hello"
 ```
 
 ### Status & Health Check
 
 ```bash
 # Show system status (version, config, model info, gateway health)
-unlimitedclaw status
+golem status
 ```
 
 ### Shell Completion
@@ -190,23 +190,23 @@ Generate shell completion scripts for your shell:
 
 ```bash
 # Bash
-unlimitedclaw completion bash > /etc/bash_completion.d/unlimitedclaw
+golem completion bash > /etc/bash_completion.d/golem
 
 # Zsh
-unlimitedclaw completion zsh > "${fpath[1]}/_unlimitedclaw"
+golem completion zsh > "${fpath[1]}/_golem"
 
 # Fish
-unlimitedclaw completion fish > ~/.config/fish/completions/unlimitedclaw.fish
+golem completion fish > ~/.config/fish/completions/golem.fish
 
 # PowerShell
-unlimitedclaw completion powershell > unlimitedclaw.ps1
+golem completion powershell > golem.ps1
 ```
 
 ### Docker
 
 ```bash
 # Build image
-docker build -f docker/Dockerfile -t unlimitedclaw .
+docker build -f docker/Dockerfile -t golem .
 
 # Run with Docker Compose (gateway mode)
 docker compose -f docker/docker-compose.yml --profile gateway up
@@ -234,15 +234,15 @@ export DASHSCOPE_API_KEY="sk-..."
 Or use the config file approach:
 
 ```bash
-cp config/config.example.json ~/.unlimitedclaw/config.json
-# Edit with your API keys, or use: unlimitedclaw config set ...
+cp config/config.example.json ~/.golem/config.json
+# Edit with your API keys, or use: golem config set ...
 ```
 
 ## Project Structure
 
 ```
-unlimitedClaw/
-├── cmd/unlimitedclaw/              # CLI entry point (cobra)
+Golem/
+├── cmd/golem/              # CLI entry point (cobra)
 ├── core/                           # Core domain logic
 │   ├── agent/                      # ReAct loop engine
 │   ├── bus/                        # Message bus (pub/sub)
@@ -282,7 +282,7 @@ unlimitedClaw/
 ├── docker/                         # Dockerfile + Compose
 │   └── monitoring/                 # Prometheus + Grafana configs
 ├── k8s/                            # Kubernetes manifests
-├── helm/unlimitedclaw/             # Helm chart
+├── helm/golem/             # Helm chart
 ├── .github/workflows/              # CI/CD pipelines
 ├── scripts/                        # Utility scripts
 ├── Makefile                        # Build automation
@@ -315,7 +315,7 @@ go test -bench=. -benchmem ./internal/gateway/...
 kubectl apply -f k8s/
 
 # Or use Helm
-helm install unlimitedclaw helm/unlimitedclaw/
+helm install golem helm/golem/
 ```
 
 ## Learning Resources

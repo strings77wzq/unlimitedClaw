@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/strings77wzq/unlimitedClaw/core/tools"
+	"github.com/strings77wzq/golem/core/tools"
 )
 
 func TestJSONRPCSerialization(t *testing.T) {
@@ -106,7 +106,7 @@ func TestInitializeRequest(t *testing.T) {
 	params := InitializeParams{
 		ProtocolVersion: "2024-11-05",
 		ClientInfo: ClientInfo{
-			Name:    "unlimitedclaw",
+			Name:    "golem",
 			Version: "0.1.0",
 		},
 		Capabilities: Capabilities{},
@@ -125,8 +125,8 @@ func TestInitializeRequest(t *testing.T) {
 	if decoded.ProtocolVersion != "2024-11-05" {
 		t.Errorf("expected protocol version 2024-11-05, got %s", decoded.ProtocolVersion)
 	}
-	if decoded.ClientInfo.Name != "unlimitedclaw" {
-		t.Errorf("expected client name unlimitedclaw, got %s", decoded.ClientInfo.Name)
+	if decoded.ClientInfo.Name != "golem" {
+		t.Errorf("expected client name golem, got %s", decoded.ClientInfo.Name)
 	}
 	if decoded.ClientInfo.Version != "0.1.0" {
 		t.Errorf("expected client version 0.1.0, got %s", decoded.ClientInfo.Version)

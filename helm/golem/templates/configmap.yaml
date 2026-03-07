@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "unlimitedclaw.fullname" . }}-config
+  name: {{ include "golem.fullname" . }}-config
   labels:
-    {{- include "unlimitedclaw.labels" . | nindent 4 }}
+    {{- include "golem.labels" . | nindent 4 }}
 data:
   config.json: |
     {

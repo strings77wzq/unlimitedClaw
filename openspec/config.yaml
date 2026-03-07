@@ -4,7 +4,7 @@ version: "1.0"
 # PROJECT CONTEXT
 # ============================================================
 context: |
-  unlimitedClaw is a progressive Go AI assistant learning project.
+  Golem is a progressive Go AI assistant learning project.
   It is simultaneously a working AI agent CLI and an educational
   codebase for intermediate Go developers studying hexagonal
   architecture, concurrency patterns, and LLM integration.

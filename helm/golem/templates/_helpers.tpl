@@ -1,8 +1,8 @@
-{{- define "unlimitedclaw.name" -}}
+{{- define "golem.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{- define "unlimitedclaw.fullname" -}}
+{{- define "golem.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -15,20 +15,20 @@
 {{- end }}
 {{- end }}
 
-{{- define "unlimitedclaw.chart" -}}
+{{- define "golem.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{- define "unlimitedclaw.labels" -}}
-helm.sh/chart: {{ include "unlimitedclaw.chart" . }}
-{{ include "unlimitedclaw.selectorLabels" . }}
+{{- define "golem.labels" -}}
+helm.sh/chart: {{ include "golem.chart" . }}
+{{ include "golem.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
-{{- define "unlimitedclaw.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "unlimitedclaw.name" . }}
+{{- define "golem.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "golem.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}

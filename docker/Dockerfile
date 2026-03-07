@@ -1,5 +1,5 @@
 # ============================================================
-# Stage 1: Build the unlimitedclaw binary
+# Stage 1: Build the golem binary
 # ============================================================
 FROM golang:1.25-alpine AS builder
 
@@ -11,7 +11,7 @@ RUN go mod download
 
 # Copy source and build
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -o /build/unlimitedclaw ./cmd/unlimitedclaw
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -o /build/golem ./cmd/golem
 
 # ============================================================
 # Stage 2: Minimal runtime image
@@ -21,7 +21,7 @@ FROM alpine:3.21
 RUN apk add --no-cache ca-certificates tzdata wget
 
 # Copy binary from builder
-COPY --from=builder /build/unlimitedclaw /usr/local/bin/unlimitedclaw
+COPY --from=builder /build/golem /usr/local/bin/golem
 
 # Create non-root user
 RUN adduser -D -g '' appuser
@@ -35,5 +35,5 @@ EXPOSE 18790
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD wget -qO- http://localhost:18790/health || exit 1
 
-ENTRYPOINT ["/usr/local/bin/unlimitedclaw"]
+ENTRYPOINT ["/usr/local/bin/golem"]
 CMD ["gateway"]

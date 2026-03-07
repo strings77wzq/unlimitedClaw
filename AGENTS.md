@@ -1,4 +1,4 @@
-# AGENTS.md — unlimitedClaw AI Collaboration Context
+# AGENTS.md — Golem AI Collaboration Context
 
 > This file is the **first thing AI tools should read** when opening this repository.
 > It contains the project context, architecture rules, hard constraints, and working principles
@@ -8,7 +8,7 @@
 
 ## 1. Project Overview
 
-**unlimitedClaw** is a progressive Go AI assistant learning project, inspired by
+**Golem** is a progressive Go AI assistant learning project, inspired by
 [PicoClaw](https://github.com/sipeed/picoclaw). Its purpose is two-fold:
 
 1. **Functional**: A working AI agent CLI that supports multiple LLM providers, tool calling,
@@ -25,8 +25,8 @@
 ## 2. Repository Layout
 
 ```
-unlimitedClaw/
-├── cmd/unlimitedclaw/     # Composition root — wires all layers; cobra CLI entry point
+golem/
+├── cmd/golem/         # Composition root — wires all layers; cobra CLI entry point
 ├── core/                  # Domain logic — agent, bus, config, providers, session, tools, usage
 ├── foundation/            # Infrastructure primitives — concurrency, logger, store, term
 ├── feature/               # Reference implementations (NOT wired into main.go — learning only)
@@ -171,7 +171,7 @@ TUI (tui.go)                    Agent (loop.go)
 
 | Metric | Value |
 |---|---|
-| Version | v0.3.0 |
+| Version | v0.5.0 |
 | Packages | 28 |
 | Test coverage | 79.2% |
 | CI status | ✅ Green |
@@ -191,8 +191,9 @@ TUI (tui.go)                    Agent (loop.go)
   broken or inconsistent intermediate state.
 - **Chinese for conversation**: All conversational responses to the user in this project are
   in Chinese (Simplified). Code, comments, and commit messages remain in English.
-- **No background agents**: Background async agent delegation does not work reliably in this
-  environment. Do all work directly in the main agent.
+- **Parallel agent delegation**: Use background `task()` calls with `run_in_background=true`
+  for independent exploration (explore/librarian agents). Collect results via `background_output`
+  after the system notification fires. Do NOT block on results — end the response and wait.
 
 ---
 
@@ -200,7 +201,7 @@ TUI (tui.go)                    Agent (loop.go)
 
 ```bash
 # Build (pure Go, Termux-compatible)
-CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath -o build/unlimitedclaw ./cmd/unlimitedclaw
+CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath -o build/golem ./cmd/golem
 
 # Or via Makefile
 make build
@@ -218,16 +219,16 @@ go vet ./...
 golangci-lint run
 
 # First-run setup wizard
-./build/unlimitedclaw init
+./build/golem init
 
 # Start TUI agent
-./build/unlimitedclaw agent
+./build/golem agent
 
 # One-shot query
-./build/unlimitedclaw agent -m "Hello"
+./build/golem agent -m "Hello"
 
 # Start HTTP gateway (port 18790)
-./build/unlimitedclaw gateway
+./build/golem gateway
 ```
 
 ---
@@ -236,8 +237,8 @@ golangci-lint run
 
 1. Create `core/providers/<vendor>/vendor.go` implementing `LLMProvider` (and optionally
    `StreamingProvider`).
-2. Register in `cmd/unlimitedclaw/main.go`:`registerProviders()` — add a `case "vendor":` block.
-3. Add a preset entry in `cmd/unlimitedclaw/onboard.go`:`providerPresets` if it has a
+2. Register in `cmd/golem/main.go`:`registerProviders()` — add a `case "vendor":` block.
+3. Add a preset entry in `cmd/golem/onboard.go`:`providerPresets` if it has a
    well-known API base URL.
 4. Add at least one test in `core/providers/<vendor>/vendor_test.go`.
 5. Do **not** modify `LLMProvider` or `StreamingProvider` interface signatures.
@@ -245,7 +246,7 @@ golangci-lint run
 ## 12. How to Add a New Tool
 
 1. Create `core/tools/<toolname>/<toolname>.go` implementing the `tools.Tool` interface.
-2. Register in `cmd/unlimitedclaw/main.go`:`buildToolRegistry()`.
+2. Register in `cmd/golem/main.go`:`buildToolRegistry()`.
 3. Return a meaningful `ToolResult.ForUser` string for user-visible output; put the LLM context
    in `ToolResult.ForLLM`.
 4. Add tests — tools are pure functions and should be unit-tested without a real agent.

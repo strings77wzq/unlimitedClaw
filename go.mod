@@ -1,4 +1,4 @@
-module github.com/strings77wzq/unlimitedClaw
+module github.com/strings77wzq/golem
 
 go 1.25.0
 
