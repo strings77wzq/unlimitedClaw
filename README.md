@@ -75,7 +75,7 @@ Download pre-built binaries from the [Releases](https://github.com/strings77wzq/
 
 ```bash
 git clone https://github.com/strings77wzq/golem.git
-cd Golem
+cd golem
 
 # Build binary (pure Go, no CGO)
 CGO_ENABLED=0 go build -ldflags "-s -w" -o build/golem ./cmd/golem
@@ -98,7 +98,7 @@ go install github.com/strings77wzq/golem/cmd/golem@latest
 
 # Or build from source
 git clone https://github.com/strings77wzq/golem.git
-cd Golem
+cd golem
 CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath \
     -o ~/bin/golem ./cmd/golem
 ```

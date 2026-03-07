@@ -131,7 +131,7 @@ ReAct = **Rea**son + A**ct**，是一种让 AI 能够交替进行推理和行动
 ### 构建项目
 
 ```bash
-cd /home/strin/go/src/devLearn/aiLab/goclaw/Golem
+cd golem
 go build -o build/golem ./cmd/golem
 ```
 

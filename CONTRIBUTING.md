@@ -5,7 +5,7 @@ Thank you for your interest in contributing to Golem!
 ## Development Setup
 
 1. **Prerequisites**: Go 1.25+, Git
-2. **Clone**: `git clone https://github.com/strings77wzq/Golem.git`
+2. **Clone**: `git clone https://github.com/strings77wzq/golem.git`
 3. **Build**: `make build`
 4. **Test**: `make test`
 
