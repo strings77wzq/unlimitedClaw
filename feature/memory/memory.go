@@ -1,3 +1,8 @@
+// Package memory implements long-term memory for the AI agent with importance
+// scoring and exponential decay. Memories are stored persistently and pruned
+// automatically when the store exceeds capacity. This is a reference
+// implementation in the feature/ layer and is NOT wired into main.go by
+// default.
 package memory
 
 import (

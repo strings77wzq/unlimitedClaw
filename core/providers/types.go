@@ -1,3 +1,8 @@
+// Package providers defines the core LLM abstraction interfaces ([LLMProvider]
+// and [StreamingProvider]) shared across all vendor adapters, plus a [Factory]
+// for registering and retrieving provider instances by vendor name.
+// The interface signatures in this file MUST NOT be changed — all adapters
+// depend on them.
 package providers
 
 import (

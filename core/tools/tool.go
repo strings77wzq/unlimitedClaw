@@ -1,3 +1,8 @@
+// Package tools defines the [Tool] interface and [Registry] that all agent
+// tools must implement and register with. Tools are pure functions: they
+// receive a map of arguments and return a [ToolResult] with separate strings
+// for user-visible output and LLM context. The registry always returns tools
+// in alphabetical order to maximise LLM KV-cache reuse across requests.
 package tools
 
 import "context"

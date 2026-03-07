@@ -1,3 +1,7 @@
+// Package usage tracks token consumption and computes cost estimates for LLM
+// API calls. It embeds pricing data for 25+ models and exposes a thread-safe
+// [Tracker] that accumulates prompt and completion token counts across a
+// session. Cost is displayed to the user after each agent turn.
 package usage
 
 import "sync"

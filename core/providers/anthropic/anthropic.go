@@ -1,3 +1,8 @@
+// Package anthropic implements the [providers.LLMProvider] and
+// [providers.StreamingProvider] interfaces for the Anthropic Messages API
+// (claude-3-* family). Streaming uses Anthropic's SSE format which differs
+// from OpenAI's; both non-streaming and streaming paths share the same
+// adapter via [New].
 package anthropic
 
 import (

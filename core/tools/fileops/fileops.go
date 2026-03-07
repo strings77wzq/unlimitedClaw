@@ -1,3 +1,8 @@
+// Package fileops provides three file-system tools for the AI agent:
+// "file_read" reads a file relative to the workspace root, "file_write"
+// creates or overwrites a file, and "file_list" lists directory contents.
+// All paths are resolved relative to the workspace directory supplied at
+// construction time; absolute paths outside the workspace are rejected.
 package fileops
 
 import (

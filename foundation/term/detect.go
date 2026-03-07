@@ -1,3 +1,7 @@
+// Package term provides TTY detection helpers used to decide whether to
+// activate the interactive TUI or fall back to plain I/O. Detections are
+// computed once and cached via [sync.OnceValue] so repeated calls are cheap
+// and thread-safe.
 package term
 
 import (

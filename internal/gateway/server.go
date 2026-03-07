@@ -1,3 +1,8 @@
+// Package gateway implements the HTTP gateway server that exposes the AI agent
+// over a REST API with Server-Sent Events (SSE) streaming. It listens on port
+// 18790 by default and provides endpoints for chat, session management, and
+// health checks. The [Server] wraps an [agent.MessageHandler] and handles
+// concurrent requests via SSE.
 package gateway
 
 import (

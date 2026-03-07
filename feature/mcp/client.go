@@ -1,3 +1,8 @@
+// Package mcp implements a Model Context Protocol (MCP) client that
+// communicates with an external MCP server over stdin/stdout JSON-RPC.
+// This is a reference implementation in the feature/ layer — it is complete
+// and tested but NOT wired into the running binary by default. Wire it in
+// via cmd/unlimitedclaw/main.go if you need external MCP tool integration.
 package mcp
 
 import (

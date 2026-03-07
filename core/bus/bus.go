@@ -1,3 +1,8 @@
+// Package bus provides an in-memory publish-subscribe message bus used to
+// decouple the agent core from its I/O channels. Publishers and subscribers
+// communicate through named string topics without direct dependencies on each
+// other. Use [New] to create a bus and [Bus.Publish] / [Bus.Subscribe] to
+// exchange messages.
 package bus
 
 import "sync"

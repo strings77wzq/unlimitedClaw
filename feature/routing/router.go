@@ -1,3 +1,8 @@
+// Package routing provides a fallback-capable [Router] that wraps multiple
+// [providers.LLMProvider] instances. If the primary provider returns an error,
+// the router automatically retries with the next registered provider.
+// This is a reference implementation in the feature/ layer and is NOT wired
+// into main.go by default.
 package routing
 
 import (

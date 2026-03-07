@@ -1,3 +1,8 @@
+// Package concurrency provides reusable concurrency primitives: a bounded
+// worker [Pool] for parallel task execution, a [Semaphore] for limiting
+// concurrent access to a resource, and a token-bucket [RateLimiter].
+// All types are safe for concurrent use. The package imports only the Go
+// standard library.
 package concurrency
 
 import (

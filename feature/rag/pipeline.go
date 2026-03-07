@@ -1,3 +1,9 @@
+// Package rag implements a Retrieval-Augmented Generation pipeline. Documents
+// are indexed with TF-IDF for keyword search and optionally with dense
+// embeddings (via OpenAI Embeddings API) for semantic search. Retrieved
+// chunks are prepended to the LLM context to ground responses in facts.
+// This is a reference implementation in the feature/ layer and is NOT wired
+// into main.go by default.
 package rag
 
 import (

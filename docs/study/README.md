@@ -40,6 +40,7 @@ PicoClaw 是一个 Python 实现的 AI 助手框架。unlimitedClaw 借鉴了其
 4. **[Provider 系统](./04-provider-system.md)** - 理解 LLM 提供商抽象层
 5. **[消息总线](./05-message-bus.md)** - 掌握组件间通信机制
 6. **[流式输出与中国大模型](./06-streaming-and-providers.md)** - 掌握流式输出和多提供商集成
+7. **[TUI Channel 与 init 向导](./07-tui-channel.md)** - Bubble Tea Elm 架构、递归 Cmd 流式渲染、Termux 兼容性设计
 
 每个文档都包含：
 - 设计思想和架构决策
@@ -167,14 +168,17 @@ graph TD
     G -->|LLM 集成| I[04-Provider 系统]
     G -->|消息流转| J[05-消息总线]
     G -->|流式+扩展| P[06-流式输出与中国大模型]
+    G -->|TUI+init向导| R[07-TUI Channel]
     H --> K[实践：开发自定义工具]
     I --> L[实践：集成新的 LLM]
     J --> M[实践：添加新的 Channel]
     P --> Q[实践：集成中国大模型]
+    R --> S[实践：扩展 TUI 功能]
     K --> N[深入源码]
     L --> N
     M --> N
     Q --> N
+    S --> N
     N --> O[贡献代码]
 ```
 

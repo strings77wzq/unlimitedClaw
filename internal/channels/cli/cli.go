@@ -1,3 +1,7 @@
+// Package cli implements the plain interactive channel for the AI agent.
+// It uses bufio.Scanner to read lines from stdin and prints responses to
+// stdout, making it suitable for piped input, scripts, and terminals where
+// the Bubble Tea TUI is not desired (use --no-tui to force this mode).
 package cli
 
 import (

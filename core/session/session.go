@@ -1,3 +1,8 @@
+// Package session manages conversation state for the AI agent. Each
+// conversation is tracked as a [Session] containing a slice of messages.
+// Sessions are persisted via the [SessionStore] interface, which has two
+// implementations: [MemoryStore] (in-process, no disk) and [SQLiteAdapter]
+// (persistent, uses modernc.org/sqlite with CGO_ENABLED=0).
 package session
 
 import (

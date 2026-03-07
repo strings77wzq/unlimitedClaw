@@ -1,3 +1,7 @@
+// Package store defines the [Store] interface for key-value persistence used
+// by the session layer. The SQLite implementation (foundation/store/sqlite.go)
+// is built with modernc.org/sqlite (CGO_ENABLED=0), making it compatible with
+// static binaries on Linux amd64 and Android/Termux ARM64.
 package store
 
 import "time"

@@ -1,3 +1,7 @@
+// Package telegram adapts the Telegram Bot API to the agent's [agent.MessageHandler]
+// interface. Incoming Telegram messages are forwarded to the agent; responses
+// are sent back as Telegram messages. This adapter is wired in at the
+// composition root (cmd/unlimitedclaw) when a bot token is configured.
 package telegram
 
 import (

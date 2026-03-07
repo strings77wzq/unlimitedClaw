@@ -1,15 +1,172 @@
 version: "1.0"
+
+# ============================================================
+# PROJECT CONTEXT
+# ============================================================
 context: |
-  unlimitedClaw is a Go AI assistant learning project following PicoClaw's architecture.
-  Tech stack: Go 1.25+, cobra CLI, modernc.org/sqlite, Docker, Kubernetes.
-  Architecture: 4-layer architecture with cmd/ composition root, core/ domain logic, foundation/ primitives, feature/ optional modules, and internal/ adapters.
+  unlimitedClaw is a progressive Go AI assistant learning project.
+  It is simultaneously a working AI agent CLI and an educational
+  codebase for intermediate Go developers studying hexagonal
+  architecture, concurrency patterns, and LLM integration.
+
+  Tech stack: Go 1.25+, cobra CLI, modernc.org/sqlite (pure Go),
+  Bubble Tea v1.3.10, Docker, Kubernetes, GitHub Actions.
+
+  Target platforms: Linux amd64, Android/Termux ARM64.
+  Build invariant: CGO_ENABLED=0, pure Go, single static binary.
+
+# ============================================================
+# LAYER DEPENDENCY RULES
+# ============================================================
+layer_dependencies:
+  description: "Strict unidirectional dependency flow. Violations cause circular imports."
+  rules:
+    - layer: "cmd/"
+      may_import: ["core/", "foundation/", "feature/", "internal/"]
+      role: "Composition root only. Wires all layers. Nothing imports cmd/."
+
+    - layer: "internal/"
+      may_import: ["core/", "foundation/"]
+      must_not_import: ["feature/", "cmd/"]
+      role: "I/O adapters (channels, gateway, metrics, security). Not importable outside this module."
+
+    - layer: "core/"
+      may_import: ["foundation/"]
+      must_not_import: ["internal/", "feature/", "cmd/"]
+      role: "Domain logic. Defines interfaces (ports). Implementations live in internal/ or feature/."
+
+    - layer: "feature/"
+      may_import: ["core/", "foundation/"]
+      must_not_import: ["internal/", "cmd/"]
+      role: "Reference implementations. Standalone. NOT imported by main.go (learning modules only)."
+
+    - layer: "foundation/"
+      may_import: ["stdlib only"]
+      must_not_import: ["core/", "internal/", "feature/", "cmd/"]
+      role: "Infrastructure primitives. Zero project dependencies."
+
+# ============================================================
+# CODING RULES
+# ============================================================
 rules:
-  - Use Go stdlib testing package + testify/assert for tests
-  - Follow Go naming conventions (camelCase, PascalCase for exports)
-  - Use constructor-based dependency injection, no DI frameworks
-  - All interfaces defined in core, implementations in adapter packages
-  - CGO_ENABLED=0 compatible only (pure Go dependencies)
+  # Testing
+  - Use Go stdlib testing package + testify/assert for unit tests
+  - Table-driven tests preferred for functions with multiple input/output cases
+  - Every new exported symbol should have at least one test
+  - Target ≥70% coverage per package; race-detector must pass (go test -race ./...)
+  - Example_* functions in *_test.go serve as godoc examples — use them for public APIs
+
+  # Style & Naming
+  - Follow Go naming conventions: camelCase unexported, PascalCase exported
+  - Package names: short, lowercase, single word (e.g., "bus", "agent", "tui")
+  - Error variables: var ErrFoo = errors.New("foo") — exported, descriptive
+  - Constructor naming: New() for primary constructor, NewWith*() for variants
+
+  # Dependency Injection
+  - Constructor-based DI only — no DI frameworks, no global singletons
+  - All interfaces defined in core/ — implementations provided by adapters
+  - Interfaces accepted at call sites; concrete types returned from constructors
+
+  # Error Handling
+  - Return errors; never panic in library code (panic only in init() for truly unrecoverable)
+  - 'Always wrap: fmt.Errorf("package.Function: %w", err)'
+  - Sentinel errors (var ErrX = errors.New(...)) for errors callers must inspect
+  - Never suppress errors with _ unless genuinely not needed (comment why if so)
+
+  # Concurrency
+  - All exported types that hold mutable state must be goroutine-safe (document if not)
+  - Prefer sync.RWMutex for read-heavy data, sync.Mutex for write-heavy
+  - Always document channel ownership: who creates it, who closes it, who reads it
+  - Context propagation: accept ctx context.Context as first parameter for all I/O operations
+
+  # Build
+  - CGO_ENABLED=0 compatible only — no CGO dependencies ever
+  - Use modernc.org/sqlite for SQLite (pure Go)
+  - All binaries must build with: CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath
+
+# ============================================================
+# FORBIDDEN PATTERNS
+# ============================================================
+forbidden:
+  - pattern: "//nolint without explanation"
+    reason: "Suppressions must explain why the lint rule doesn't apply"
+
+  - pattern: "as any / interface{} casts to silence type errors"
+    reason: "Fix the type; don't paper over it"
+
+  - pattern: "panic() in library code"
+    reason: "Library code must return errors; panics break callers"
+
+  - pattern: "init() for side effects in non-cmd packages"
+    reason: "Global side effects make testing hard and break dependency injection"
+
+  - pattern: "global var for mutable state (outside cmd/)"
+    reason: "Global mutable state is untestable and causes race conditions"
+
+  - pattern: "Importing bubbletea outside internal/channels/tui/"
+    reason: "TUI must be isolated to its adapter; TUI deps must not leak into core"
+
+  - pattern: "Modifying LLMProvider or StreamingProvider interface signatures"
+    reason: "Breaking change; all provider adapters and tests depend on these contracts"
+
+  - pattern: "Alt+key shortcuts in TUI keybindings"
+    reason: "Alt sequences break on Android/Termux terminal emulators"
+
+  - pattern: "WithoutMouseCellMotion option in tea.NewProgram"
+    reason: "Does not exist in Bubble Tea v1.3.10; use tea.WithContext(ctx) only"
+
+  - pattern: "Circular imports between layers"
+    reason: "Use an interface in core/ to break the cycle instead"
+
+# ============================================================
+# INTERFACE CONTRACTS (IMMUTABLE)
+# ============================================================
+immutable_interfaces:
+  - name: "LLMProvider"
+    file: "core/providers/types.go"
+    reason: "All provider adapters (openai, anthropic, deepseek, etc.) implement this"
+
+  - name: "StreamingProvider"
+    file: "core/providers/types.go"
+    reason: "Optional streaming extension; changing it breaks all streaming adapters"
+
+  - name: "MessageHandler"
+    file: "core/agent/agent.go"
+    reason: "TUI, gateway, and CLI all call this interface; changes cascade everywhere"
+
+  - name: "Tool"
+    file: "core/tools/tool.go"
+    reason: "All tools implement this; changes require updating every tool and the registry"
+
+# ============================================================
+# NAMING CONVENTIONS
+# ============================================================
+naming:
+  packages:
+    - "Single word, lowercase: agent, bus, tui, rag, mcp"
+    - "Avoid stutter: tools.Tool not tools.ToolTool; bus.Bus not bus.BusInterface"
+
+  files:
+    - "One primary type per file, named after the type: session.go for Session struct"
+    - "Adapters named after the external system: openai.go, anthropic.go"
+    - "Tests co-located: foo_test.go next to foo.go"
+
+  interfaces:
+    - "Named for capability, not implementation: Runner not AgentRunner, Store not SQLiteStore"
+    - "Single-method interfaces use -er suffix: Subscriber, Publisher, Handler"
+
+  errors:
+    - "Sentinel: var ErrNotFound = errors.New('not found')"
+    - "Wrapped: fmt.Errorf('session.Get: %w', err)"
+
+# ============================================================
+# AI COLLABORATION PRINCIPLES
+# ============================================================
 ai_collaboration:
-  - 使用第一性原理思考：在实施前先理解"为什么"，而非直接跳到"怎么做"
-  - 目标不清晰时及时暂停并与用户讨论，不要在模糊的前提下盲目推进
-  - 目标清晰但路径不是最优时，主动说明并给出更好的方案，而非机械执行
+  - "第一性原理：实施前先理解「为什么」，而非直接跳到「怎么做」"
+  - "目标不清晰时及时暂停并与用户讨论，不要在模糊的前提下盲目推进"
+  - "目标清晰但路径不是最优时，主动说明并给出更好的方案，而非机械执行"
+  - "一次性修复，不留 partial state：每次改动后代码必须可编译、可测试"
+  - "对话用中文；代码、注释、commit message 用英文"
+  - "不使用后台 agent（background delegation 在此环境不可靠）"
+  - "修复 bug 时：最小化改动，不趁机重构"

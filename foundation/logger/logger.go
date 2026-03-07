@@ -1,3 +1,7 @@
+// Package logger wraps the standard library's [log/slog] package to provide
+// structured, levelled logging with a consistent interface across all layers.
+// Use [New] with [DefaultOptions] to obtain a logger; pass it as a dependency
+// rather than using a global singleton.
 package logger
 
 import (

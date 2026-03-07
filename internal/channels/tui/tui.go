@@ -1,3 +1,9 @@
+// Package tui implements the interactive Bubble Tea terminal UI for the AI
+// agent. It is the ONLY package in the entire codebase that may import
+// github.com/charmbracelet/bubbletea — all other packages must remain free
+// of that dependency. Token streaming is driven by a recursive Cmd chain
+// (waitNextToken) that consumes a chan string without additional goroutines.
+// The TUI auto-activates when stdin is a TTY; use --no-tui to suppress it.
 package tui
 
 import (

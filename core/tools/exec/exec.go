@@ -1,3 +1,8 @@
+// Package exec provides the "exec" tool that lets the AI agent run shell
+// commands in a sandboxed working directory. Commands are executed with a
+// configurable timeout; output (stdout + stderr combined) is returned as
+// the tool result. The working directory is set at construction time via [New]
+// and cannot be escaped by the agent.
 package exec
 
 import (

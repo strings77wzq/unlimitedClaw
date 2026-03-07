@@ -1,3 +1,8 @@
+// Package openai implements the [providers.LLMProvider] and
+// [providers.StreamingProvider] interfaces for the OpenAI Chat Completions
+// API. It also serves as the adapter for all OpenAI-compatible endpoints
+// (DeepSeek, Kimi, GLM, MiniMax, Qwen) by accepting a custom API base URL
+// via [WithAPIBase].
 package openai
 
 import (

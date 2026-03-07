@@ -1,3 +1,7 @@
+// Package builtins registers the default skills shipped with unlimitedClaw:
+// "summarize" condenses long texts into concise summaries, and "code-review"
+// provides structured feedback on Go source code. Call [Register] to add them
+// to a [skills.Registry].
 package builtins
 
 import "github.com/strings77wzq/unlimitedClaw/feature/skills"

@@ -1,3 +1,8 @@
+// Package agent implements the ReAct (Reason + Act) loop that drives the AI
+// assistant. It receives user messages from the message bus, calls the LLM,
+// dispatches tool calls, and publishes responses back onto the bus.
+// The Agent type is the central coordinator; use [New] to construct one and
+// [Agent.Start] to run its event loop.
 package agent
 
 import (

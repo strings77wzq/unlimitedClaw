@@ -1,3 +1,6 @@
+// Package websearch provides the "web_search" tool that performs web searches
+// on behalf of the AI agent. Results are returned as plain text summaries
+// suitable for inclusion in the LLM context window.
 package websearch
 
 import (

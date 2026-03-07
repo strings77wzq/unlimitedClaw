@@ -84,6 +84,31 @@ CGO_ENABLED=0 go build -ldflags "-s -w" -o build/unlimitedclaw ./cmd/unlimitedcl
 make build
 ```
 
+### On Android/Termux (ARM64)
+
+unlimitedClaw builds and runs natively on Android via [Termux](https://termux.dev/) — no root required.
+
+```bash
+# Install Go in Termux
+pkg install golang
+
+# Install directly via go install
+go install github.com/strings77wzq/unlimitedClaw/cmd/unlimitedclaw@latest
+# Binary lands at $HOME/go/bin/unlimitedclaw
+
+# Or build from source
+git clone https://github.com/strings77wzq/unlimitedClaw.git
+cd unlimitedClaw
+CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath \
+    -o ~/bin/unlimitedclaw ./cmd/unlimitedclaw
+```
+
+> **Termux notes:**
+> - The TUI auto-activates when stdin is a TTY (standard Termux terminal); pipe/redirect falls back to plain output automatically.
+> - Mouse input is disabled by default — compatible with all Termux terminal emulators and Android keyboards.
+> - Alt+key shortcuts are not used; all keybindings work with standard terminal key sequences.
+> - Use `unlimitedclaw init` for the first-run setup wizard to configure your API key.
+
 ## Quick Start
 
 ### Prerequisites

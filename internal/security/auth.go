@@ -1,3 +1,7 @@
+// Package security provides HTTP middleware for authentication (Bearer token
+// validation), per-IP rate limiting, and a command sandbox that restricts
+// which shell commands the exec tool may run. All three concerns are
+// composable net/http middleware and can be applied independently.
 package security
 
 import (
