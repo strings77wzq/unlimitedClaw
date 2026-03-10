@@ -23,6 +23,12 @@ The Agent component implements the ReAct (Reasoning + Acting) loop for Golem.
 - The Agent MUST re-invoke the LLM with updated context after tool execution.
 - The Agent MUST repeat this cycle until the LLM returns a response without tool calls.
 
+#### Tool Execution Security Constraints
+- The `exec` tool MUST run in Sandbox mode by default (no shell interpretation, command allowlist enforcement)
+- Shell interpretation for `exec` tool MUST ONLY be enabled via explicit `WithAllowShell()` configuration
+- All tool executions MUST respect configured security policies (allowlist/denylist rules)
+- Tool execution errors MUST be properly logged and returned to the user without exposing sensitive system information
+
 ### Iteration Control
 - The Agent MUST enforce a maximum tool iteration limit (configurable, default: 25).
 - When the iteration limit is reached, the Agent MUST return an error message to the user.

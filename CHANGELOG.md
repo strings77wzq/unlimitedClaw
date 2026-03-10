@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.1] - 2026-03-10
+### Security Fixes
+#### Exec Tool Command Injection Prevention
+- Rewrote `core/tools/exec/exec.go` with default direct command execution (no shell interpretation) to prevent command injection attacks
+- Implemented 4-tier security mode system: Sandbox (default), Allowlist, Denylist, Unrestricted
+- Added 70+ default safe command allowlist and dangerous operation denylist
+- Added `WithAllowShell()` option for explicit shell access (only for trusted environments)
+- Updated all unit tests with comprehensive security test cases
+#### Gateway Security Enhancements
+- Added built-in Bearer token authentication for HTTP gateway (via `GOLEM_AUTH_TOKEN` environment variable or config)
+- Implemented configurable rate limiting (default 100 req/s, 200 burst)
+- Added configurable CORS origin restriction (default: only allow localhost/127.0.0.1)
+- Updated all gateway middleware to apply security policies by default
+#### Error Handling Fixes
+- Fixed ignored JSON marshal error in `core/providers/openai/openai.go`
+- Added error logging for ignored `processMessage()` errors in `core/agent/loop.go`
+### Changed
+- All existing tests pass, coverage maintained at 79.3%
+- Updated `docs/SECURITY.md` with new security feature documentation
+- Updated openspec specifications to align with new security capabilities
+
 ## [0.5.0] - 2026-03-09
 
 ### Added

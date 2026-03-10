@@ -8,9 +8,11 @@ Security best practices for deploying and operating Golem.
 
 Golem includes several security features:
 - API key management via environment variables
-- Rate limiting (IP-based)
-- Command sandboxing
+- Built-in Bearer token authentication for HTTP gateway
+- Configurable IP-based rate limiting
+- Multi-mode command sandboxing (exec tool)
 - TLS/HTTPS support (via reverse proxy)
+- CORS origin restriction for gateway
 
 ---
 
@@ -56,19 +58,20 @@ secrets:
 
 ### IP-Based Rate Limiting
 
-Golem includes built-in rate limiting in `internal/security/ratelimit.go`:
+Golem includes built-in configurable rate limiting in `internal/security/ratelimit.go`:
 
-| Endpoint | Limit |
-|----------|-------|
-| `/api/chat` | 60 req/min per IP |
-| `/api/chat/stream` | 60 req/min per IP |
+| Default Limits | Value |
+|----------------|-------|
+| Requests per second | 100 |
+| Burst limit | 200 |
 
 ### Customization
 
-Rate limiting is configured in code. To adjust:
+Rate limiting is now configurable via gateway config:
+1. Set `rate_limit_rps` and `rate_limit_burst` in your config file
+2. No rebuild required
 
-1. Edit `internal/security/ratelimit.go`
-2. Rebuild image
+For distributed deployments, integrate Redis as before.
 
 ### Redis-Based Rate Limiting (Advanced)
 
@@ -97,11 +100,25 @@ func rateLimitByIP(ctx context.Context, ip string) bool {
 
 ### exec tool
 
-The `exec` tool executes shell commands. By default, it runs in a constrained environment:
+The `exec` tool executes shell commands with 3 configurable security modes, plus optional shell access:
 
-- No interactive shell
+| Security Mode | Description | Use Case |
+|---|---|---|
+| `Sandbox` (Default) | Direct command execution (no shell interpretation), strict 70+ command allowlist, automatic denylist for dangerous operations | Most secure, production default |
+| `Allowlist` | Custom command allowlist, no shell interpretation | Restricted environments with specific command needs |
+| `Denylist` | All commands allowed except explicit denylist, no shell interpretation | Trusted environments with flexible needs |
+
+> **Shell Access Option**: Any security mode can be combined with the `WithAllowShell()` option to enable shell interpretation (pipes, redirects, subshells). This provides full shell access and is **not recommended for production environments**.
+
+#### Default Sandbox Mode Constraints:
+- No shell interpretation by default (prevents command injection via `;`, `|`, `&&` etc.)
+- Allowlist includes 70+ common safe commands (git, grep, ls, cat, etc.)
+- Denylist blocks dangerous operations (rm -rf /, sudo, su, chmod 777, etc.)
 - Timeout: 30 seconds
 - Working directory: workspace root
+
+#### Shell Access (Only For Trusted Environments):
+To enable shell interpretation for pipes/redirects, explicitly use the `WithAllowShell()` option when registering the exec tool. This is **not recommended** for production environments.
 
 ### Best Practices
 
@@ -216,13 +233,27 @@ spec:
 
 ## Authentication
 
-### Currently No Built-in Auth
+### Built-in Bearer Token Authentication (Gateway)
+Golem gateway now includes built-in Bearer token authentication, enabled by setting the `GOLEM_AUTH_TOKEN` environment variable or configuring it in the gateway config:
 
-The gateway currently has **no authentication**. For production:
+```bash
+# Enable auth via environment variable
+export GOLEM_AUTH_TOKEN="your-secure-token-here"
+# Start gateway
+golem gateway
+```
 
-1. **Use reverse proxy** with auth (OAuth2, Basic Auth)
-2. **API key header** (implement custom middleware)
-3. **mTLS** (mutual TLS for service mesh)
+Usage:
+```bash
+# Authenticated request
+curl -H "Authorization: Bearer your-secure-token-here" http://localhost:18790/api/chat
+```
+
+### Additional Authentication Options
+For production environments requiring more complex auth:
+1. **Use reverse proxy** with auth (OAuth2, OIDC, Basic Auth)
+2. **mTLS** (mutual TLS for service mesh)
+3. **Custom middleware** for enterprise auth integration
 
 ### Example: API Key Middleware
 
@@ -242,6 +273,14 @@ func apiKeyMiddleware(next http.Handler) http.Handler {
     })
 }
 ```
+
+---
+
+## CORS Configuration
+The gateway includes configurable CORS origin restriction:
+- Default: Only allow `http://localhost` and `http://127.0.0.1` origins
+- Configure allowed origins via `cors_allowed_origins` config option
+- Set to `["*"]` to allow all origins (not recommended for production)
 
 ---
 
