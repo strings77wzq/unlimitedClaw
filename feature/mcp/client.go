@@ -151,7 +151,10 @@ func (c *Client) call(ctx context.Context, method string, params interface{}, re
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case response := <-responseChan:
+	case response, ok := <-responseChan:
+		if !ok || response == nil {
+			return fmt.Errorf("connection closed")
+		}
 		if response.Error != nil {
 			return fmt.Errorf("JSON-RPC error %d: %s", response.Error.Code, response.Error.Message)
 		}
