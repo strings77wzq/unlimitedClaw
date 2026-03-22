@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -54,6 +55,12 @@ type Model struct {
 	input     string
 	thinking  bool
 	lastError string
+
+	viewport viewport.Model
+	ready    bool
+	width    int
+	height   int
+	atBottom bool
 }
 
 func New(ctx context.Context, sessionID string, handler MessageHandler) Model {
@@ -63,6 +70,7 @@ func New(ctx context.Context, sessionID string, handler MessageHandler) Model {
 		sessionID: sessionID,
 		ctx:       childCtx,
 		cancel:    cancel,
+		atBottom:  true,
 	}
 }
 
@@ -72,14 +80,45 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+
+		inputHeight := 2
+		viewportHeight := max(1, m.height-inputHeight)
+
+		if !m.ready {
+			m.viewport = viewport.New(m.width, viewportHeight)
+			m.viewport.SetContent(m.buildTranscript())
+			m.ready = true
+		} else {
+			m.viewport.Width = m.width
+			m.viewport.Height = viewportHeight
+			m.viewport.SetContent(m.buildTranscript())
+		}
+
+		if m.atBottom {
+			m.viewport.GotoBottom()
+		}
+		return m, nil
+
 	case tea.KeyMsg:
 		return m.handleKey(msg)
 
 	case tokenMsg:
+		wasAtBottom := m.ready && m.atBottom && m.viewport.AtBottom()
+
 		if len(m.messages) > 0 && m.messages[len(m.messages)-1].role == roleAssistant {
 			m.messages[len(m.messages)-1].content += string(msg)
 		} else {
 			m.messages = append(m.messages, chatMsg{role: roleAssistant, content: string(msg)})
+		}
+
+		if m.ready {
+			m.viewport.SetContent(m.buildTranscript())
+			if wasAtBottom {
+				m.viewport.GotoBottom()
+			}
 		}
 		return m, waitNextToken(m.tokenCh)
 
@@ -89,13 +128,80 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			m.lastError = msg.err.Error()
 		}
+		if m.ready {
+			m.viewport.SetContent(m.buildTranscript())
+			if m.atBottom {
+				m.viewport.GotoBottom()
+			}
+		}
 		return m, nil
+	}
+
+	if m.ready {
+		var cmd tea.Cmd
+		m.viewport, cmd = m.viewport.Update(msg)
+		m.atBottom = m.viewport.AtBottom()
+		return m, cmd
 	}
 
 	return m, nil
 }
 
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.Type {
+	case tea.KeyUp:
+		if m.ready {
+			m.viewport.ScrollUp(1)
+			m.atBottom = m.viewport.AtBottom()
+			return m, nil
+		}
+	case tea.KeyDown:
+		if m.ready {
+			m.viewport.ScrollDown(1)
+			m.atBottom = m.viewport.AtBottom()
+			return m, nil
+		}
+	case tea.KeyPgUp:
+		if m.ready {
+			m.viewport.HalfPageUp()
+			m.atBottom = m.viewport.AtBottom()
+			return m, nil
+		}
+	case tea.KeyPgDown:
+		if m.ready {
+			m.viewport.HalfPageDown()
+			m.atBottom = m.viewport.AtBottom()
+			return m, nil
+		}
+	case tea.KeyHome:
+		if m.ready {
+			m.viewport.GotoTop()
+			m.atBottom = false
+			return m, nil
+		}
+	case tea.KeyEnd:
+		if m.ready {
+			m.viewport.GotoBottom()
+			m.atBottom = true
+			return m, nil
+		}
+	}
+
+	if msg.Type == tea.KeyCtrlU {
+		if m.ready {
+			m.viewport.HalfPageUp()
+			m.atBottom = m.viewport.AtBottom()
+			return m, nil
+		}
+	}
+	if msg.Type == tea.KeyCtrlD {
+		if m.ready {
+			m.viewport.HalfPageDown()
+			m.atBottom = m.viewport.AtBottom()
+			return m, nil
+		}
+	}
+
 	switch msg.Type {
 	case tea.KeyCtrlC, tea.KeyEsc:
 		m.cancel()
@@ -129,6 +235,13 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.thinking = true
 		m.lastError = ""
 		m.messages = append(m.messages, chatMsg{role: roleUser, content: text})
+
+		if m.ready {
+			m.viewport.SetContent(m.buildTranscript())
+			m.viewport.GotoBottom()
+			m.atBottom = true
+		}
+
 		tokens := make(chan string, 64)
 		m.tokenCh = tokens
 		return m, tea.Batch(m.startStream(text, tokens), waitNextToken(tokens))
@@ -160,7 +273,7 @@ func waitNextToken(tokens <-chan string) tea.Cmd {
 	}
 }
 
-func (m Model) View() string {
+func (m Model) buildTranscript() string {
 	var b strings.Builder
 
 	for _, msg := range m.messages {
@@ -184,6 +297,17 @@ func (m Model) View() string {
 		b.WriteString(promptStyle.Render("AI:  ") + "…\n")
 	}
 
+	return b.String()
+}
+
+func (m Model) View() string {
+	if !m.ready {
+		return m.buildTranscript() + promptStyle.Render("> ") + m.input
+	}
+
+	var b strings.Builder
+	b.WriteString(m.viewport.View())
+	b.WriteString("\n")
 	b.WriteString(promptStyle.Render("> "))
 	b.WriteString(m.input)
 
