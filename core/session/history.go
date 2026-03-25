@@ -66,7 +66,50 @@ func (h *HistoryManager) GetContextWindow(messages []providers.Message) []provid
 }
 
 // EstimateTokens gives a rough token estimate for a message.
-// Uses chars/4 approximation (industry standard rough estimate).
+// Uses chars/4 approximation for ASCII and chars/2 for CJK characters.
 func (h *HistoryManager) EstimateTokens(msg providers.Message) int {
-	return len(msg.Content) / 4
+	var cjkCount, asciiCount int
+	for _, r := range msg.Content {
+		if isCJKRune(r) {
+			cjkCount++
+		} else {
+			asciiCount++
+		}
+	}
+	// CJK: ~2 chars per token, ASCII: ~4 chars per token
+	return (cjkCount+1)/2 + (asciiCount+3)/4
+}
+
+// isCJKRune returns true if the rune is a CJK character.
+// Covers Chinese, Japanese (Hiragana/Katakana), and Korean (Hangul).
+func isCJKRune(r rune) bool {
+	// CJK Unified Ideographs (Chinese + Kanji)
+	if r >= 0x4E00 && r <= 0x9FFF {
+		return true
+	}
+	// CJK Unified Ideographs Extension A
+	if r >= 0x3400 && r <= 0x4DBF {
+		return true
+	}
+	// CJK Compatibility Ideographs
+	if r >= 0xF900 && r <= 0xFAFF {
+		return true
+	}
+	// Hiragana
+	if r >= 0x3040 && r <= 0x309F {
+		return true
+	}
+	// Katakana
+	if r >= 0x30A0 && r <= 0x30FF {
+		return true
+	}
+	// Hangul Syllables (Korean)
+	if r >= 0xAC00 && r <= 0xD7AF {
+		return true
+	}
+	// Hangul Jamo (Korean)
+	if r >= 0x1100 && r <= 0x11FF {
+		return true
+	}
+	return false
 }

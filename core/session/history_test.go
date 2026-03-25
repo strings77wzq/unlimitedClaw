@@ -94,19 +94,56 @@ func TestEmptyMessages(t *testing.T) {
 	}
 }
 
-func TestEstimateTokens(t *testing.T) {
+func TestEstimateTokensASCII(t *testing.T) {
 	manager := NewHistoryManager(100)
 
 	msg := providers.Message{
 		Role:    providers.RoleUser,
-		Content: "1234567890123456",
+		Content: "1234567890123456", // 16 ASCII chars
 	}
 
 	tokens := manager.EstimateTokens(msg)
 
-	expected := len(msg.Content) / 4
+	// ASCII: 16 chars / 4 = 4 tokens (rounded up)
+	expected := 4
 	if tokens != expected {
-		t.Errorf("expected %d tokens, got %d", expected, tokens)
+		t.Errorf("expected %d tokens for ASCII, got %d", expected, tokens)
+	}
+}
+
+func TestEstimateTokensCJK(t *testing.T) {
+	manager := NewHistoryManager(100)
+
+	msg := providers.Message{
+		Role:    providers.RoleUser,
+		Content: "你好世界", // 4 CJK chars
+	}
+
+	tokens := manager.EstimateTokens(msg)
+
+	// CJK: 4 chars / 2 = 2 tokens (rounded up)
+	expected := 2
+	if tokens != expected {
+		t.Errorf("expected %d tokens for CJK, got %d", expected, tokens)
+	}
+}
+
+func TestEstimateTokensMixed(t *testing.T) {
+	manager := NewHistoryManager(100)
+
+	msg := providers.Message{
+		Role:    providers.RoleUser,
+		Content: "Hello你好World世界", // 10 ASCII + 4 CJK = 14 chars
+	}
+
+	tokens := manager.EstimateTokens(msg)
+
+	// ASCII: 10 / 4 = 2.5 -> 3 tokens (rounded up)
+	// CJK: 4 / 2 = 2 tokens
+	// Total: 5 tokens
+	expected := 5
+	if tokens != expected {
+		t.Errorf("expected %d tokens for mixed content, got %d", expected, tokens)
 	}
 }
 
