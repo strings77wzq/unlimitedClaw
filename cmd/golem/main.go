@@ -34,6 +34,7 @@ import (
 	"github.com/strings77wzq/golem/feature/skills/builtins"
 	"github.com/strings77wzq/golem/foundation/logger"
 	"github.com/strings77wzq/golem/foundation/term"
+	"github.com/strings77wzq/golem/internal/channels/telegram"
 	"github.com/strings77wzq/golem/internal/channels/tui"
 	"github.com/strings77wzq/golem/internal/gateway"
 )
@@ -203,6 +204,22 @@ func newAgentCommand() *cobra.Command {
 				log.Info("loaded MCP tools", "count", len(mcpProxies))
 			}
 
+			memoryFlag, _ := cmd.Flags().GetString("memory")
+			if memoryFlag != "" {
+				memCfg, err := ParseMemoryConfig(memoryFlag)
+				if err != nil {
+					return fmt.Errorf("parsing memory config: %w", err)
+				}
+				memRegistry, _, err := LoadMemoryTools(context.Background(), memCfg)
+				if err != nil {
+					return fmt.Errorf("loading memory tools: %w", err)
+				}
+				for _, t := range memRegistry.ListTools() {
+					registry.Register(t)
+				}
+				log.Info("loaded memory tools")
+			}
+
 			factory := registerProviders(cfg)
 			log = logger.New(logger.DefaultOptions())
 
@@ -238,6 +255,23 @@ func newAgentCommand() *cobra.Command {
 
 			history := session.NewHistoryManager(cfg.Agents.Defaults.MaxTokens)
 			ag := agent.New(b, registry, factory, sessionStore, history, log, cfg, agent.WithSystemPrompt(systemPrompt))
+
+			telegramFlag, _ := cmd.Flags().GetString("telegram")
+			var telegramAdapter *telegram.Adapter
+			if telegramFlag != "" {
+				tgCfg, err := ParseTelegramConfig(telegramFlag)
+				if err != nil {
+					return fmt.Errorf("parsing telegram config: %w", err)
+				}
+				tgCtx, tgCancel := context.WithCancel(context.Background())
+				defer tgCancel()
+				telegramAdapter, err = StartTelegramAdapter(tgCtx, tgCfg, b, log)
+				if err != nil {
+					return fmt.Errorf("starting telegram adapter: %w", err)
+				}
+				telegramAdapter.Start(tgCtx)
+				defer telegramAdapter.Stop()
+			}
 
 			var sessionID string
 			if continueFlag != "" {
@@ -292,6 +326,8 @@ func newAgentCommand() *cobra.Command {
 	cmd.Flags().String("skills", "", "Comma-separated skill names to enable (e.g., 'summarize,codereview')")
 	cmd.Flags().String("rag", "", "RAG configuration: directory path or JSON config for document index")
 	cmd.Flags().String("mcp", "", "MCP servers configuration: JSON array of server configs")
+	cmd.Flags().String("memory", "", "Memory file path or JSON config for long-term memory")
+	cmd.Flags().String("telegram", "", "Telegram bot token or JSON config for Telegram channel")
 	return cmd
 }
 
@@ -592,6 +628,20 @@ func newGatewayCommand() *cobra.Command {
 			}
 
 			server := gateway.NewServerWithSecurity(serverCfg, secCfg, ag, log)
+
+			if cfg.Telegram.Token != "" && cfg.Telegram.Mode == "webhook" {
+				tgCfg := cfg.Telegram
+				tgCtx, tgCancel := context.WithCancel(context.Background())
+				defer tgCancel()
+				tgAdapter, err := StartTelegramAdapter(tgCtx, tgCfg, b, log)
+				if err != nil {
+					return fmt.Errorf("starting telegram adapter: %w", err)
+				}
+				tgAdapter.Start(tgCtx)
+				defer tgAdapter.Stop()
+				server.MountHandler("/telegram/webhook", tgAdapter.WebhookHandler(tgCfg.WebhookSecret))
+				log.Info("telegram webhook mounted", "path", "/telegram/webhook")
+			}
 
 			log.Info("starting gateway server",
 				"addr", serverCfg.Addr,
