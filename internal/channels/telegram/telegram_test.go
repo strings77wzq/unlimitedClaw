@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ func TestGetUpdates(t *testing.T) {
 	updates := []Update{
 		{
 			UpdateID: 123,
-			Message: &TGMessage{
+			Message: &Message{
 				MessageID: 456,
 				From: &User{
 					ID:        789,
@@ -182,7 +183,7 @@ func TestAdapterStart(t *testing.T) {
 				updates = []Update{
 					{
 						UpdateID: 1,
-						Message: &TGMessage{
+						Message: &Message{
 							MessageID: 100,
 							From: &User{
 								ID:        123,
@@ -343,6 +344,243 @@ func TestSendMessageError(t *testing.T) {
 	if err.Error() != "API returned not OK" {
 		t.Errorf("unexpected error message: %v", err)
 	}
+}
+
+func TestClientWithHTTPClient(t *testing.T) {
+	customHTTPClient := &http.Client{Timeout: 5 * time.Second}
+	client := NewClient("test-token", WithHTTPClient(customHTTPClient))
+
+	if client.httpClient != customHTTPClient {
+		t.Error("expected custom HTTP client to be set")
+	}
+}
+
+func TestWebhookHandler(t *testing.T) {
+	msgBus := bus.New()
+	defer msgBus.Close()
+
+	log := logger.NopLogger()
+	adapter := &Adapter{
+		msgBus: msgBus,
+		log:    log,
+	}
+
+	inbound := msgBus.Subscribe("inbound")
+
+	handler := adapter.WebhookHandler("secret-token")
+
+	reqBody := `{
+		"update_id": 123,
+		"message": {
+			"message_id": 456,
+			"from": {
+				"id": 789,
+				"first_name": "John",
+				"username": "johndoe"
+			},
+			"chat": {
+				"id": 789,
+				"type": "private"
+			},
+			"text": "Hello webhook",
+			"date": 1234567890
+		}
+	}`
+
+	t.Run("valid webhook request", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(reqBody))
+		req.Header.Set("X-Telegram-Bot-Api-Secret-Token", "secret-token")
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		handler(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status 200, got %d", w.Code)
+		}
+
+		select {
+		case msg := <-inbound:
+			inMsg, ok := msg.(map[string]interface{})
+			if !ok {
+				t.Fatalf("expected map[string]interface{}, got %T", msg)
+			}
+			if inMsg["text"] != "Hello webhook" {
+				t.Errorf("expected text 'Hello webhook', got %v", inMsg["text"])
+			}
+		case <-time.After(100 * time.Millisecond):
+			t.Error("expected inbound message")
+		}
+	})
+
+	t.Run("wrong method returns 405", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/webhook", nil)
+		w := httptest.NewRecorder()
+		handler(w, req)
+
+		if w.Code != http.StatusMethodNotAllowed {
+			t.Errorf("expected status 405, got %d", w.Code)
+		}
+	})
+
+	t.Run("wrong secret token returns 401", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(reqBody))
+		req.Header.Set("X-Telegram-Bot-Api-Secret-Token", "wrong-token")
+
+		w := httptest.NewRecorder()
+		handler(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("expected status 401, got %d", w.Code)
+		}
+	})
+
+	t.Run("no secret token configured", func(t *testing.T) {
+		handlerNoSecret := adapter.WebhookHandler("")
+
+		req := httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(reqBody))
+		w := httptest.NewRecorder()
+		handlerNoSecret(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status 200, got %d", w.Code)
+		}
+	})
+
+	t.Run("invalid JSON returns 400", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader("invalid json"))
+		req.Header.Set("X-Telegram-Bot-Api-Secret-Token", "secret-token")
+
+		w := httptest.NewRecorder()
+		handler(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected status 400, got %d", w.Code)
+		}
+	})
+}
+
+func TestSetWebhook(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/setWebhook" {
+			t.Errorf("expected path /setWebhook, got %s", r.URL.Path)
+		}
+
+		var params map[string]string
+		json.NewDecoder(r.Body).Decode(&params)
+
+		if params["url"] != "https://example.com/webhook" {
+			t.Errorf("expected url 'https://example.com/webhook', got %s", params["url"])
+		}
+
+		resp := APIResponse{OK: true, Result: json.RawMessage("{}")}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	client := NewClient("test-token", WithBaseURL(server.URL+"/"))
+
+	err := client.SetWebhook(context.Background(), "https://example.com/webhook", "secret")
+	if err != nil {
+		t.Fatalf("SetWebhook failed: %v", err)
+	}
+}
+
+func TestSetWebhookError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("bad request"))
+	}))
+	defer server.Close()
+
+	client := NewClient("test-token", WithBaseURL(server.URL+"/"))
+
+	err := client.SetWebhook(context.Background(), "https://example.com/webhook", "")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestDeleteWebhook(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/deleteWebhook" {
+			t.Errorf("expected path /deleteWebhook, got %s", r.URL.Path)
+		}
+
+		var params map[string]bool
+		json.NewDecoder(r.Body).Decode(&params)
+
+		if !params["drop_pending_updates"] {
+			t.Error("expected drop_pending_updates to be true")
+		}
+
+		resp := APIResponse{OK: true, Result: json.RawMessage("{}")}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	client := NewClient("test-token", WithBaseURL(server.URL+"/"))
+
+	err := client.DeleteWebhook(context.Background(), true)
+	if err != nil {
+		t.Fatalf("DeleteWebhook failed: %v", err)
+	}
+}
+
+func TestDeleteWebhookError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("internal error"))
+	}))
+	defer server.Close()
+
+	client := NewClient("test-token", WithBaseURL(server.URL+"/"))
+
+	err := client.DeleteWebhook(context.Background(), false)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestOutboundLoopError(t *testing.T) {
+	msgBus := bus.New()
+	defer msgBus.Close()
+
+	log := logger.NopLogger()
+	cfg := AdapterConfig{
+		Token:       "test-token",
+		PollTimeout: 1,
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := APIResponse{OK: false}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	adapter := NewAdapter(cfg, msgBus, log, WithBaseURL(server.URL+"/"))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := adapter.Start(ctx); err != nil {
+		t.Fatalf("Start failed: %v", err)
+	}
+	defer adapter.Stop()
+
+	// Publish invalid message type
+	msgBus.Publish("outbound", "invalid")
+
+	// Publish missing chat_id
+	msgBus.Publish("outbound", map[string]interface{}{"text": "hello"})
+
+	// Publish missing text
+	msgBus.Publish("outbound", map[string]interface{}{"chat_id": int64(123)})
+
+	time.Sleep(100 * time.Millisecond)
 }
 
 func mustMarshal(t *testing.T, v interface{}) json.RawMessage {

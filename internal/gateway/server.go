@@ -10,9 +10,22 @@ import (
 	"net/http"
 	"time"
 
+	coreproviders "github.com/strings77wzq/golem/core/providers"
+	"github.com/strings77wzq/golem/core/session"
 	"github.com/strings77wzq/golem/foundation/logger"
 	"github.com/strings77wzq/golem/internal/security"
 )
+
+// HealthChecker provides health status for providers.
+type HealthChecker interface {
+	GetAllStatuses() map[string]*coreproviders.HealthStatus
+}
+
+// SessionStore provides access to sessions for import/export.
+type SessionStore interface {
+	Get(id string) (*session.Session, bool)
+	Save(s *session.Session) error
+}
 
 // AgentHandler decouples gateway from agent package
 type AgentHandler interface {
@@ -71,6 +84,8 @@ type Server struct {
 	mux             *http.ServeMux
 	logger          logger.Logger
 	agent           AgentHandler
+	healthChecker   HealthChecker
+	sessionStore    SessionStore
 	shutdownTimeout time.Duration
 }
 
@@ -159,4 +174,20 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // Handler returns the HTTP handler (for testing)
 func (s *Server) Handler() http.Handler {
 	return s.httpServer.Handler
+}
+
+// SetHealthChecker sets the health checker for the provider health endpoint.
+func (s *Server) SetHealthChecker(hc HealthChecker) {
+	s.healthChecker = hc
+}
+
+// SetSessionStore sets the session store for import/export endpoints.
+func (s *Server) SetSessionStore(store SessionStore) {
+	s.sessionStore = store
+}
+
+// MountHandler registers an HTTP handler at the given path on the server mux.
+// Call this before Start() to add custom endpoints.
+func (s *Server) MountHandler(pattern string, handler http.Handler) {
+	s.mux.Handle(pattern, handler)
 }

@@ -46,6 +46,11 @@ func NewAdapter(cfg AdapterConfig, msgBus bus.Bus, log logger.Logger, opts ...Cl
 	}
 }
 
+// Client returns the underlying Telegram Bot API client for webhook configuration
+func (a *Adapter) Client() *Client {
+	return a.client
+}
+
 // Start begins the polling loop and message handling
 func (a *Adapter) Start(ctx context.Context) error {
 	a.ctx, a.cancel = context.WithCancel(ctx)

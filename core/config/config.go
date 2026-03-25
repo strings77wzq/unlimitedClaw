@@ -9,9 +9,18 @@ import (
 
 // Config is the root configuration structure
 type Config struct {
-	Agents    AgentConfig   `json:"agents"`
-	Gateway   GatewayConfig `json:"gateway"`
-	ModelList []ModelEntry  `json:"model_list"`
+	Agents    AgentConfig    `json:"agents"`
+	Gateway   GatewayConfig  `json:"gateway"`
+	Telegram  TelegramConfig `json:"telegram,omitempty"`
+	ModelList []ModelEntry   `json:"model_list"`
+}
+
+type TelegramConfig struct {
+	Token         string `json:"token,omitempty"`
+	Mode          string `json:"mode,omitempty"`
+	WebhookURL    string `json:"webhook_url,omitempty"`
+	WebhookSecret string `json:"webhook_secret,omitempty"`
+	PollTimeout   int    `json:"poll_timeout,omitempty"`
 }
 
 // AgentConfig holds agent-related defaults

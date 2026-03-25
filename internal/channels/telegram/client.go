@@ -87,6 +87,24 @@ func (c *Client) GetUpdates(ctx context.Context, offset int, timeout int) ([]Upd
 	return updates, nil
 }
 
+// doRequest performs a POST request to the given Telegram Bot API method
+func (c *Client) doRequest(method string, body []byte) (*http.Response, error) {
+	url := fmt.Sprintf("%s%s", c.baseURL, method)
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("creating request for %s: %w", method, err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("performing request to %s: %w", method, err)
+	}
+
+	return resp, nil
+}
+
 // SendMessage sends a text message to a chat
 func (c *Client) SendMessage(ctx context.Context, chatID int64, text string) error {
 	reqBody := SendMessageRequest{
