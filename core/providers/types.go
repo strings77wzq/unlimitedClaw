@@ -86,3 +86,19 @@ type StreamingProvider interface {
 	ChatStream(ctx context.Context, messages []Message, toolDefs []tools.ToolDefinition,
 		model string, opts *ChatOptions, onToken func(token string)) (*LLMResponse, error)
 }
+
+// HealthStatus represents the health check result for a provider.
+type HealthStatus struct {
+	Provider  string `json:"provider"`   // Provider name (e.g., "openai")
+	Status    string `json:"status"`     // "healthy", "degraded", "unhealthy"
+	Latency   int64  `json:"latency"`    // Response time in milliseconds
+	Error     string `json:"error"`      // Error message if unhealthy
+	CheckedAt int64  `json:"checked_at"` // Unix timestamp of last check
+}
+
+// HealthChecker is an optional interface for providers that support health checking.
+type HealthChecker interface {
+	// HealthCheck performs a lightweight health check on the provider.
+	// Returns the health status with latency measurement.
+	HealthCheck(ctx context.Context) (*HealthStatus, error)
+}

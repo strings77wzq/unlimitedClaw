@@ -22,6 +22,7 @@ import (
 )
 
 var _ providers.StreamingProvider = (*Provider)(nil)
+var _ providers.HealthChecker = (*Provider)(nil)
 
 const (
 	defaultAPIBase    = "https://api.anthropic.com"
@@ -87,6 +88,61 @@ func New(apiKey string, opts ...Option) *Provider {
 // Name returns the provider name.
 func (p *Provider) Name() string {
 	return "anthropic"
+}
+
+// HealthCheck implements providers.HealthChecker.
+func (p *Provider) HealthCheck(ctx context.Context) (*providers.HealthStatus, error) {
+	start := time.Now()
+
+	url := p.apiBase + "/v1/models"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return &providers.HealthStatus{
+			Provider:  p.Name(),
+			Status:    "unhealthy",
+			Latency:   time.Since(start).Milliseconds(),
+			Error:     fmt.Sprintf("failed to create request: %v", err),
+			CheckedAt: time.Now().Unix(),
+		}, nil
+	}
+	req.Header.Set("x-api-key", p.apiKey)
+	req.Header.Set("anthropic-version", p.apiVersion)
+
+	resp, err := p.httpClient.Do(req)
+	latency := time.Since(start).Milliseconds()
+
+	if err != nil {
+		return &providers.HealthStatus{
+			Provider:  p.Name(),
+			Status:    "unhealthy",
+			Latency:   latency,
+			Error:     fmt.Sprintf("request failed: %v", err),
+			CheckedAt: time.Now().Unix(),
+		}, nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		status := "healthy"
+		if latency > 2000 {
+			status = "degraded"
+		}
+		return &providers.HealthStatus{
+			Provider:  p.Name(),
+			Status:    status,
+			Latency:   latency,
+			CheckedAt: time.Now().Unix(),
+		}, nil
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	return &providers.HealthStatus{
+		Provider:  p.Name(),
+		Status:    "unhealthy",
+		Latency:   latency,
+		Error:     fmt.Sprintf("API returned status %d: %s", resp.StatusCode, string(body)),
+		CheckedAt: time.Now().Unix(),
+	}, nil
 }
 
 // Chat implements the LLMProvider interface.

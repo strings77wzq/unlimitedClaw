@@ -1,8 +1,16 @@
 package providers
 
 import (
+	"context"
+	"encoding/json"
 	"testing"
 )
+
+type fakeHealthChecker struct{}
+
+func (f *fakeHealthChecker) HealthCheck(_ context.Context) (*HealthStatus, error) {
+	return &HealthStatus{Provider: "fake", Status: "healthy", Latency: 1, CheckedAt: 1}, nil
+}
 
 func TestMessageRoles(t *testing.T) {
 	tests := []struct {
@@ -151,5 +159,54 @@ func TestToolResultMessage(t *testing.T) {
 
 	if msg.ToolCallID != "call_abc" {
 		t.Errorf("ToolCallID mismatch: got %s", msg.ToolCallID)
+	}
+}
+
+func TestHealthStatusJSONTags(t *testing.T) {
+	status := HealthStatus{
+		Provider:  "openai",
+		Status:    "healthy",
+		Latency:   12,
+		Error:     "",
+		CheckedAt: 1710000000,
+	}
+
+	b, err := json.Marshal(status)
+	if err != nil {
+		t.Fatalf("failed to marshal health status: %v", err)
+	}
+
+	var decoded map[string]interface{}
+	if err := json.Unmarshal(b, &decoded); err != nil {
+		t.Fatalf("failed to unmarshal health status json: %v", err)
+	}
+
+	if _, ok := decoded["provider"]; !ok {
+		t.Fatalf("expected provider field in json")
+	}
+	if _, ok := decoded["status"]; !ok {
+		t.Fatalf("expected status field in json")
+	}
+	if _, ok := decoded["latency"]; !ok {
+		t.Fatalf("expected latency field in json")
+	}
+	if _, ok := decoded["error"]; !ok {
+		t.Fatalf("expected error field in json")
+	}
+	if _, ok := decoded["checked_at"]; !ok {
+		t.Fatalf("expected checked_at field in json")
+	}
+}
+
+func TestHealthCheckerInterfaceContract(t *testing.T) {
+	var _ HealthChecker = (*fakeHealthChecker)(nil)
+
+	checker := &fakeHealthChecker{}
+	status, err := checker.HealthCheck(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if status.Provider != "fake" {
+		t.Errorf("expected provider fake, got %q", status.Provider)
 	}
 }

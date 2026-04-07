@@ -779,3 +779,72 @@ func TestStreamingProviderInterface(t *testing.T) {
 	p := New("test-key")
 	var _ providers.StreamingProvider = p
 }
+
+func TestHealthCheckHealthy(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/models" {
+			t.Fatalf("expected /v1/models, got %s", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	}))
+	defer server.Close()
+
+	p := New("test-key", WithAPIBase(server.URL))
+	status, err := p.HealthCheck(context.Background())
+	if err != nil {
+		t.Fatalf("HealthCheck failed: %v", err)
+	}
+	if status.Provider != "anthropic" {
+		t.Errorf("expected provider anthropic, got %q", status.Provider)
+	}
+	if status.Status != "healthy" {
+		t.Errorf("expected healthy status, got %q", status.Status)
+	}
+	if status.CheckedAt <= 0 {
+		t.Errorf("expected CheckedAt > 0, got %d", status.CheckedAt)
+	}
+}
+
+func TestHealthCheckUnhealthyStatusCode(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"error":"invalid key"}`))
+	}))
+	defer server.Close()
+
+	p := New("bad-key", WithAPIBase(server.URL))
+	status, err := p.HealthCheck(context.Background())
+	if err != nil {
+		t.Fatalf("HealthCheck returned unexpected error: %v", err)
+	}
+	if status.Status != "unhealthy" {
+		t.Errorf("expected unhealthy status, got %q", status.Status)
+	}
+	if !strings.Contains(status.Error, "401") {
+		t.Errorf("expected status error to contain 401, got %q", status.Error)
+	}
+}
+
+func TestHealthCheckContextCancellation(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(200 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	p := New("test-key", WithAPIBase(server.URL))
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+
+	status, err := p.HealthCheck(ctx)
+	if err != nil {
+		t.Fatalf("HealthCheck returned unexpected error: %v", err)
+	}
+	if status.Status != "unhealthy" {
+		t.Errorf("expected unhealthy status on context timeout, got %q", status.Status)
+	}
+	if !strings.Contains(status.Error, "request failed") {
+		t.Errorf("expected request failed error, got %q", status.Error)
+	}
+}
