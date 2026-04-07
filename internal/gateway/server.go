@@ -16,8 +16,7 @@ import (
 	"github.com/strings77wzq/golem/internal/security"
 )
 
-// HealthChecker provides health status for providers.
-type HealthChecker interface {
+type HealthStatusProvider interface {
 	GetAllStatuses() map[string]*coreproviders.HealthStatus
 }
 
@@ -84,7 +83,7 @@ type Server struct {
 	mux             *http.ServeMux
 	logger          logger.Logger
 	agent           AgentHandler
-	healthChecker   HealthChecker
+	healthChecker   HealthStatusProvider
 	sessionStore    SessionStore
 	shutdownTimeout time.Duration
 }
@@ -177,7 +176,7 @@ func (s *Server) Handler() http.Handler {
 }
 
 // SetHealthChecker sets the health checker for the provider health endpoint.
-func (s *Server) SetHealthChecker(hc HealthChecker) {
+func (s *Server) SetHealthChecker(hc HealthStatusProvider) {
 	s.healthChecker = hc
 }
 

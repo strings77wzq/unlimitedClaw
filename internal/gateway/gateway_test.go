@@ -11,12 +11,21 @@ import (
 	"testing"
 	"time"
 
+	coreproviders "github.com/strings77wzq/golem/core/providers"
 	"github.com/strings77wzq/golem/foundation/logger"
 )
 
 type mockAgentHandler struct {
 	response string
 	err      error
+}
+
+type mockHealthStatusProvider struct {
+	statuses map[string]*coreproviders.HealthStatus
+}
+
+func (m *mockHealthStatusProvider) GetAllStatuses() map[string]*coreproviders.HealthStatus {
+	return m.statuses
 }
 
 func (m *mockAgentHandler) HandleMessage(ctx context.Context, sessionID, message string) (string, error) {
@@ -53,6 +62,82 @@ func TestHealthCheck(t *testing.T) {
 
 	if _, err := time.Parse(time.RFC3339, resp.Timestamp); err != nil {
 		t.Errorf("timestamp not in RFC3339 format: %v", err)
+	}
+}
+
+func TestProvidersHealth_NotConfigured(t *testing.T) {
+	log := logger.NopLogger()
+	agent := &mockAgentHandler{response: "test"}
+	cfg := DefaultServerConfig()
+	server := NewServer(cfg, agent, log)
+
+	req := httptest.NewRequest(http.MethodGet, "/health/providers", nil)
+	rec := httptest.NewRecorder()
+
+	server.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rec.Code)
+	}
+
+	var resp map[string]string
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if resp["status"] != "not_configured" {
+		t.Errorf("expected status 'not_configured', got %q", resp["status"])
+	}
+	if resp["message"] != "health checker not configured" {
+		t.Errorf("expected not-configured message, got %q", resp["message"])
+	}
+}
+
+func TestProvidersHealth_WithChecker(t *testing.T) {
+	log := logger.NopLogger()
+	agent := &mockAgentHandler{response: "test"}
+	cfg := DefaultServerConfig()
+	server := NewServer(cfg, agent, log)
+
+	provider := &mockHealthStatusProvider{statuses: map[string]*coreproviders.HealthStatus{
+		"openai": {
+			Provider:  "openai",
+			Status:    "healthy",
+			Latency:   42,
+			CheckedAt: 1710000000,
+		},
+		"anthropic": {
+			Provider:  "anthropic",
+			Status:    "degraded",
+			Latency:   2501,
+			Error:     "slow upstream",
+			CheckedAt: 1710000001,
+		},
+	}}
+	server.SetHealthChecker(provider)
+
+	req := httptest.NewRequest(http.MethodGet, "/health/providers", nil)
+	rec := httptest.NewRecorder()
+
+	server.Handler().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rec.Code)
+	}
+
+	var resp map[string]coreproviders.HealthStatus
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(resp) != 2 {
+		t.Fatalf("expected 2 provider statuses, got %d", len(resp))
+	}
+	if resp["openai"].Status != "healthy" {
+		t.Errorf("expected openai healthy, got %q", resp["openai"].Status)
+	}
+	if resp["anthropic"].Status != "degraded" {
+		t.Errorf("expected anthropic degraded, got %q", resp["anthropic"].Status)
 	}
 }
 
